@@ -19,6 +19,7 @@ public class ClassSessionService {
         session.setDurationMinutes(durationMinutes);
         session.setCoachName(coach);
         session.setRoom(room);
+        session.setGenerated(false);
 
         repository.createSession(session);
     }

@@ -12,8 +12,8 @@ public class ClassSessionRepository {
     public void createSession(ClassSession session) {
 
         String sql = "INSERT INTO class_sessions " +
-                "(class_id, day_of_week, start_time, duration_minutes, coach_name, room) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+                "(class_id, day_of_week, start_time, duration_minutes, coach_name, room, is_generated) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -24,6 +24,7 @@ public class ClassSessionRepository {
             stmt.setInt(4, session.getDurationMinutes());
             stmt.setString(5, session.getCoachName());
             stmt.setString(6, session.getRoom());
+            stmt.setBoolean(7, session.isGenerated());
 
             stmt.executeUpdate();
 
@@ -94,6 +95,8 @@ public class ClassSessionRepository {
                 );
 
                 session.setClassName(rs.getString("class_name"));
+                session.setGenerated(rs.getBoolean("is_generated"));
+
                 sessions.add(session);
             }
 
@@ -130,6 +133,7 @@ public class ClassSessionRepository {
                 );
 
                 session.setClassName(rs.getString("class_name"));
+                session.setGenerated(rs.getBoolean("is_generated"));
                 sessions.add(session);
             }
 
@@ -200,6 +204,21 @@ public class ClassSessionRepository {
         }
 
         return false;
+    }
+
+
+    public void deleteGeneratedSessions() {
+
+        String sql = "DELETE FROM class_sessions WHERE is_generated = TRUE";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

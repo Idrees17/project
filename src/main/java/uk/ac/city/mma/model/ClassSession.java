@@ -10,6 +10,7 @@ public class ClassSession {
     private int durationMinutes;
     private String coachName;
     private String room;
+    private boolean generated;
 
     public ClassSession() {
     }
@@ -88,5 +89,13 @@ public class ClassSession {
 
     public void setRoom(String room) {
         this.room = room;
+    }
+
+    public boolean isGenerated() {
+        return generated;
+    }
+
+    public void setGenerated(boolean generated) {
+        this.generated = generated;
     }
 }
