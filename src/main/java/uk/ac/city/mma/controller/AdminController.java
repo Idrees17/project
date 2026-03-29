@@ -12,6 +12,7 @@ public class AdminController {
     private TimetableService timetableService = new TimetableService();
     private CoachService coachService = new CoachService();
     private RoomService roomService = new RoomService();
+    private List<String> lastGenerationMessages = new ArrayList<>();
 
     public String getClassesPage() {
 
@@ -161,24 +162,30 @@ public class AdminController {
         StringBuilder html = new StringBuilder();
 
         html.append("<html><body>");
-
         html.append("<h1>Timetable Management</h1>");
 
-        // Generate button
+        html.append("<button onclick=\"location.href='/admin/add-session'\">Add Session</button> ");
         html.append("<button onclick=\"location.href='/admin/generate-timetable'\">Generate Timetable</button>");
         html.append("<br><br>");
 
-        html.append("<button onclick=\"location.href='/admin/add-session'\">Add Session</button>");
-        html.append("<br><br>");
-
+        if (!lastGenerationMessages.isEmpty()) {
+            html.append("<h2>Generation Messages</h2>");
+            html.append("<ul>");
+            for (String msg : lastGenerationMessages) {
+                html.append("<li>").append(msg).append("</li>");
+            }
+            html.append("</ul><br>");
+        }
 
         html.append("<table border='1'>");
         html.append("<tr>");
         html.append("<th>Class</th>");
         html.append("<th>Day</th>");
-        html.append("<th>Time</th>");
+        html.append("<th>Start Time</th>");
+        html.append("<th>Duration</th>");
         html.append("<th>Coach</th>");
         html.append("<th>Room</th>");
+        html.append("<th>Source</th>");
         html.append("<th>Actions</th>");
         html.append("</tr>");
 
@@ -189,22 +196,20 @@ public class AdminController {
             html.append("<td>").append(s.getClassName()).append("</td>");
             html.append("<td>").append(s.getDayOfWeek()).append("</td>");
             html.append("<td>").append(s.getStartTime()).append("</td>");
+            html.append("<td>").append(s.getDurationMinutes()).append(" mins</td>");
             html.append("<td>").append(s.getCoachName()).append("</td>");
             html.append("<td>").append(s.getRoom()).append("</td>");
-
-            // ACTIONS COLUMN
+            html.append("<td>").append(s.isGenerated() ? "Generated" : "Manual").append("</td>");
 
             html.append("<td>");
 
-            // DELETE
             html.append("<form method='POST' action='/admin/delete-session' style='display:inline;'>");
             html.append("<input type='hidden' name='sessionId' value='")
                     .append(s.getSessionId())
                     .append("'>");
             html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
+            html.append("</form> ");
 
-            // EDIT
             html.append("<a href='/admin/edit-session?sessionId=")
                     .append(s.getSessionId())
                     .append("'>Edit</a>");
@@ -328,7 +333,11 @@ public class AdminController {
             requests.add(req);
         }
 
-        timetableService.generateMultiple(requests);
+        lastGenerationMessages = timetableService.generateMultiple(requests);
+    }
+
+    public List<String> getLastGenerationMessages() {
+        return lastGenerationMessages;
     }
 
     public String getCoachesPage() {

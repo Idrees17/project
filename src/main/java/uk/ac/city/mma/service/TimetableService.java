@@ -12,16 +12,26 @@ public class TimetableService {
 
     private ClassSessionRepository sessionRepo = new ClassSessionRepository();
 
-    public void generateMultiple(List<GenerationRequest> requests) {
+    public List<String> generateMultiple(List<GenerationRequest> requests) {
+
+        List<String> messages = new ArrayList<>();
+
+        // Clear previous generated timetable only
+        sessionRepo.deleteGeneratedSessions();
+        messages.add("Previous generated sessions were cleared before creating the new repeating timetable.");
 
         for (GenerationRequest req : requests) {
 
             if (req.sessionsPerWeek > 5) {
-                throw new IllegalArgumentException("A repeating weekly timetable cannot place the same class/skill on more than 5 days.");
+                messages.add("Could not place class ID " + req.classId +
+                        " (" + req.skillLevel + "): cannot schedule more than 5 repeating weekly sessions without repeating a day.");
+                continue;
             }
 
             List<String> targetDays = getSpreadDays(req.sessionsPerWeek);
             Set<String> usedDaysForThisConfig = new HashSet<>();
+
+            int createdForThisConfig = 0;
 
             for (String day : targetDays) {
 
@@ -49,10 +59,12 @@ public class TimetableService {
                         session.setDurationMinutes(req.durationMinutes);
                         session.setCoachName(req.coachName);
                         session.setRoom(req.roomName);
+                        session.setGenerated(true);
 
                         sessionRepo.createSession(session);
 
                         usedDaysForThisConfig.add(day);
+                        createdForThisConfig++;
                         placed = true;
                         break;
                     }
@@ -61,10 +73,21 @@ public class TimetableService {
                 }
 
                 if (!placed) {
-                    System.out.println("Could not place session for classId " + req.classId + " on " + day);
+                    messages.add("Could not place one " + req.skillLevel +
+                            " session for class ID " + req.classId +
+                            " on " + day +
+                            " between " + req.afterTime + " and " + req.beforeTime +
+                            " using coach " + req.coachName +
+                            " and room " + req.roomName + ".");
                 }
             }
+
+            messages.add("Created " + createdForThisConfig + " out of " +
+                    req.sessionsPerWeek + " requested sessions for class ID " +
+                    req.classId + " (" + req.skillLevel + ").");
         }
+
+        return messages;
     }
 
     private List<String> getSpreadDays(int sessionsPerWeek) {
