@@ -76,7 +76,18 @@ public class ClassSessionRepository {
         List<ClassSession> sessions = new ArrayList<>();
 
         String sql = "SELECT cs.*, c.class_name FROM class_sessions cs " +
-                "JOIN classes c ON cs.class_id = c.class_id";
+                "JOIN classes c ON cs.class_id = c.class_id " +
+                "ORDER BY " +
+                "CASE cs.day_of_week " +
+                "WHEN 'Monday' THEN 1 " +
+                "WHEN 'Tuesday' THEN 2 " +
+                "WHEN 'Wednesday' THEN 3 " +
+                "WHEN 'Thursday' THEN 4 " +
+                "WHEN 'Friday' THEN 5 " +
+                "WHEN 'Saturday' THEN 6 " +
+                "WHEN 'Sunday' THEN 7 " +
+                "ELSE 8 END, " +
+                "cs.start_time";
 
         try (Connection conn = MySQLConnection.getConnection();
              Statement stmt = conn.createStatement();
