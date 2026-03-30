@@ -11,6 +11,7 @@ public class ClassSession {
     private String coachName;
     private String room;
     private boolean generated;
+    private String skillLevel;
 
     public ClassSession() {
     }
@@ -97,5 +98,13 @@ public class ClassSession {
 
     public void setGenerated(boolean generated) {
         this.generated = generated;
+    }
+
+    public String getSkillLevel() {
+        return skillLevel;
+    }
+
+    public void setSkillLevel(String skillLevel) {
+        this.skillLevel = skillLevel;
     }
 }

@@ -180,6 +180,7 @@ public class AdminController {
         html.append("<table border='1'>");
         html.append("<tr>");
         html.append("<th>Class</th>");
+        html.append("<th>Skill Level</th>");
         html.append("<th>Day</th>");
         html.append("<th>Start Time</th>");
         html.append("<th>Duration</th>");
@@ -194,6 +195,7 @@ public class AdminController {
             html.append("<tr>");
 
             html.append("<td>").append(s.getClassName()).append("</td>");
+            html.append("<td>").append(s.getSkillLevel()).append("</td>");
             html.append("<td>").append(s.getDayOfWeek()).append("</td>");
             html.append("<td>").append(s.getStartTime()).append("</td>");
             html.append("<td>").append(s.getDurationMinutes()).append(" mins</td>");
