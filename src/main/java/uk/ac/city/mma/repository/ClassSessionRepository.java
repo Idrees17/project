@@ -232,4 +232,41 @@ public class ClassSessionRepository {
         }
     }
 
+
+    public ClassSession getSessionById(int sessionId) {
+
+        String sql = "SELECT cs.*, c.class_name FROM class_sessions cs " +
+                "JOIN classes c ON cs.class_id = c.class_id " +
+                "WHERE cs.session_id = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, sessionId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                ClassSession session = new ClassSession(
+                        rs.getInt("session_id"),
+                        rs.getInt("class_id"),
+                        rs.getString("day_of_week"),
+                        rs.getString("start_time"),
+                        rs.getInt("duration_minutes"),
+                        rs.getString("coach_name"),
+                        rs.getString("room")
+                );
+
+                session.setClassName(rs.getString("class_name"));
+                session.setGenerated(rs.getBoolean("is_generated"));
+
+                return session;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 }

@@ -238,27 +238,76 @@ public class AdminController {
         classSessionService.updateSession(sessionId, day, time, durationMinutes, coach, room);
     }
 
-    public String getEditSessionPage(int sessionId){
+    public String getEditSessionPage(int sessionId) {
+
+        ClassSession session = classSessionService.getSessionById(sessionId);
+        List<Coach> coaches = coachService.getAllCoaches();
+        List<Room> rooms = roomService.getAllRooms();
 
         StringBuilder html = new StringBuilder();
 
+        html.append("<html><body>");
         html.append("<h1>Edit Session</h1>");
 
         html.append("<form method='POST' action='/admin/edit-session'>");
 
         html.append("<input type='hidden' name='sessionId' value='")
-                .append(sessionId)
+                .append(session.getSessionId())
                 .append("'>");
 
-        html.append("Day: <input name='day'><br>");
-        html.append("Time: <input type='time' name='time'><br>");
-        html.append("Duration (minutes): <input type='number' name='durationMinutes'><br>");
-        html.append("Coach: <input name='coach'><br>");
-        html.append("Room: <input name='room'><br>");
+        html.append("<p><strong>Class:</strong> ")
+                .append(session.getClassName())
+                .append("</p>");
 
-        html.append("<button type='submit'>Update</button>");
+        // Day dropdown
+        html.append("Day: <select name='day'>");
+        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+        for (String day : days) {
+            html.append("<option value='").append(day).append("'");
+            if (day.equals(session.getDayOfWeek())) {
+                html.append(" selected");
+            }
+            html.append(">").append(day).append("</option>");
+        }
+        html.append("</select><br>");
 
+        // Time input prefilled
+        html.append("Start Time: <input type='time' name='time' value='")
+                .append(session.getStartTime())
+                .append("'><br>");
+
+        // Duration input prefilled
+        html.append("Duration (minutes): <input type='number' min='30' step='30' name='durationMinutes' value='")
+                .append(session.getDurationMinutes())
+                .append("'><br>");
+
+        // Coach dropdown
+        html.append("Coach: <select name='coach'>");
+        for (Coach coach : coaches) {
+            html.append("<option value='").append(coach.getName()).append("'");
+            if (coach.getName().equals(session.getCoachName())) {
+                html.append(" selected");
+            }
+            html.append(">").append(coach.getName()).append("</option>");
+        }
+        html.append("</select><br>");
+
+        // Room dropdown
+        html.append("Room: <select name='room'>");
+        for (Room room : rooms) {
+            html.append("<option value='").append(room.getName()).append("'");
+            if (room.getName().equals(session.getRoom())) {
+                html.append(" selected");
+            }
+            html.append(">").append(room.getName()).append("</option>");
+        }
+        html.append("</select><br>");
+
+        html.append("<button type='submit'>Update Session</button>");
         html.append("</form>");
+
+        html.append("<br><button onclick=\"location.href='/admin/timetable'\">Back</button>");
+        html.append("</body></html>");
 
         return html.toString();
     }

@@ -40,4 +40,8 @@ public class ClassSessionService {
                               int durationMinutes, String coach, String room) {
         repository.updateSession(id, day, time, durationMinutes, coach, room);
     }
+
+    public ClassSession getSessionById(int sessionId) {
+        return repository.getSessionById(sessionId);
+    }
 }
