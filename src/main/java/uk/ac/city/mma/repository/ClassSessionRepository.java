@@ -33,44 +33,6 @@ public class ClassSessionRepository {
         }
     }
 
-    public List<ClassSession> getSessionsByClass(int classId) {
-
-        List<ClassSession> sessions = new ArrayList<>();
-
-        String sql = "SELECT cs.*, c.class_name \n" +
-                "FROM class_sessions cs\n" +
-                "JOIN classes c ON cs.class_id = c.class_id\n" +
-                "WHERE cs.class_id = ?";
-
-        try (Connection conn = MySQLConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, classId);
-
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-
-                ClassSession session = new ClassSession(
-                        rs.getInt("session_id"),
-                        rs.getInt("class_id"),
-                        rs.getString("day_of_week"),
-                        rs.getString("start_time"),
-                        rs.getInt("duration_minutes"),
-                        rs.getString("coach_name"),
-                        rs.getString("room")
-                );
-
-                sessions.add(session);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return sessions;
-    }
-
     public List<ClassSession> getAllSessions() {
 
         List<ClassSession> sessions = new ArrayList<>();
@@ -195,30 +157,6 @@ public class ClassSessionRepository {
             e.printStackTrace();
         }
     }
-
-    public boolean existsAtTime(String day, String time) {
-
-        String sql = "SELECT COUNT(*) FROM class_sessions WHERE day_of_week=? AND start_time=?";
-
-        try (Connection conn = MySQLConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, day);
-            stmt.setString(2, time);
-
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
-
 
     public void deleteGeneratedSessions() {
 

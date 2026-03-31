@@ -1,8 +1,7 @@
 package uk.ac.city.mma;
 
 import com.sun.net.httpserver.HttpServer;
-import uk.ac.city.mma.controller.UserController;
-import uk.ac.city.mma.controller.AdminController;
+import uk.ac.city.mma.controller.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -22,6 +21,7 @@ public class Main {
 
         UserController authController = new UserController();
         AdminController adminController = new AdminController();
+        MemberController memberController = new MemberController();
 
         /*
          LOGIN ROUTE
@@ -403,6 +403,61 @@ public class Main {
                 );
 
                 redirect(exchange, "/admin/rooms");
+            }
+
+            exchange.close();
+        });
+
+        /*
+         MEMBER DASHBOARD ROUTES
+        */
+
+        server.createContext("/member/timetable", e ->
+                serveHtml(e, "member-timetable.html"));
+
+        server.createContext("/member/memberships", e ->
+                serveHtml(e, "member-memberships.html"));
+
+        server.createContext("/member/tournaments", e ->
+                serveHtml(e, "member-tournaments.html"));
+
+        /*
+         MEMBER PROFILE
+        */
+
+        server.createContext("/member/profile", exchange -> {
+
+            int currentUserId = 2;
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String html = memberController.getProfilePage(currentUserId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                memberController.saveProfile(
+                        currentUserId,
+                        params.get("firstName"),
+                        params.get("lastName"),
+                        Integer.parseInt(params.get("age")),
+                        Integer.parseInt(params.get("heightCm")),
+                        Double.parseDouble(params.get("weightKg")),
+                        params.get("experienceLevel"),
+                        params.get("preferredMartialArt")
+                );
+
+                redirect(exchange, "/member/profile");
             }
 
             exchange.close();
