@@ -12,9 +12,11 @@ public class AdminController {
     private TimetableService timetableService = new TimetableService();
     private CoachService coachService = new CoachService();
     private RoomService roomService = new RoomService();
-    private List<String> lastGenerationMessages = new ArrayList<>();
     private MemberService memberService = new MemberService();
     private EventService eventService = new EventService();
+    private MatchmakingService matchmakingService = new MatchmakingService();
+
+
 
     public String getClassesPage() {
 
@@ -63,27 +65,22 @@ public class AdminController {
             html.append("<td>").append(c.getSkillLevel()).append("</td>");
             html.append("<td>").append(c.getCapacity()).append("</td>");
 
-            // DELETE BUTTON
             html.append("<td>");
             html.append("<form method='POST' action='/admin/delete-class' style='display:inline;'>");
-
             html.append("<input type='hidden' name='classId' value='")
                     .append(c.getClassId())
                     .append("'>");
-
             html.append("<button type='submit'>Delete</button>");
-
             html.append("</form>");
             html.append("</td>");
 
-            html.append("</tr>");
-
-            // CLass session button
             html.append("<td>");
             html.append("<a href='/admin/add-session?classId=")
                     .append(c.getClassId())
                     .append("'>Add Session</a>");
             html.append("</td>");
+
+            html.append("</tr>");
         }
 
         html.append("</table>");
@@ -170,10 +167,12 @@ public class AdminController {
         html.append("<button onclick=\"location.href='/admin/generate-timetable'\">Generate Timetable</button>");
         html.append("<br><br>");
 
-        if (!lastGenerationMessages.isEmpty()) {
+        List<String> generationMessages = timetableService.getLastGenerationMessages();
+
+        if (!generationMessages.isEmpty()) {
             html.append("<h2>Generation Messages</h2>");
             html.append("<ul>");
-            for (String msg : lastGenerationMessages) {
+            for (String msg : generationMessages) {
                 html.append("<li>").append(msg).append("</li>");
             }
             html.append("</ul><br>");
@@ -386,12 +385,10 @@ public class AdminController {
             requests.add(req);
         }
 
-        lastGenerationMessages = timetableService.generateMultiple(requests);
+        timetableService.generateMultiple(requests);
     }
 
-    public List<String> getLastGenerationMessages() {
-        return lastGenerationMessages;
-    }
+
 
     public String getCoachesPage() {
 
@@ -804,6 +801,7 @@ public class AdminController {
             html.append("<td>");
             html.append("<a href='/admin/edit-tournament?eventId=").append(e.getEventId()).append("'>Edit</a> ");
             html.append("<a href='/admin/view-entrants?eventId=").append(e.getEventId()).append("'>View Entrants</a> ");
+            html.append("<a href='/admin/view-matches?eventId=").append(e.getEventId()).append("'>View Matches</a> ");
 
             html.append("<form method='POST' action='/admin/delete-tournament' style='display:inline;'>");
             html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
@@ -911,6 +909,64 @@ public class AdminController {
         }
 
         html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void generateMatchesForEvent(int eventId) {
+        matchmakingService.generateMatchesForEvent(eventId);
+    }
+
+    public String getMatchesPage(int eventId) {
+
+        Event event = eventService.getEventById(eventId);
+        List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Matches for ").append(event.getEventName()).append("</h1>");
+
+        List<String> matchMessages = matchmakingService.getLastGenerationMessages();
+
+        if (!matchMessages.isEmpty()) {
+            html.append("<h2>Generation Messages</h2>");
+            html.append("<ul>");
+            for (String msg : matchMessages) {
+                html.append("<li>").append(msg).append("</li>");
+            }
+            html.append("</ul>");
+        }
+
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>Match ID</th>");
+        html.append("<th>Participant 1</th>");
+        html.append("<th>Participant 2</th>");
+        html.append("<th>Status</th>");
+        html.append("<th>Round</th>");
+        html.append("</tr>");
+
+        for (Match m : matches) {
+            html.append("<tr>");
+            html.append("<td>").append(m.getMatchId()).append("</td>");
+            html.append("<td>").append(m.getParticipant1Name()).append("</td>");
+            html.append("<td>").append(m.getParticipant2Name()).append("</td>");
+            html.append("<td>").append(m.getStatus()).append("</td>");
+            html.append("<td>").append(m.getRoundNumber()).append("</td>");
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br>");
+        html.append("<form method='POST' action='/admin/generate-matches'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("<button type='submit'>Generate Matches</button>");
+        html.append("</form>");
 
         html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
         html.append("</body></html>");

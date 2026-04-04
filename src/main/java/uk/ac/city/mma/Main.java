@@ -13,7 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class Main {
 
@@ -24,6 +26,8 @@ public class Main {
         UserController authController = new UserController();
         AdminController adminController = new AdminController();
         MemberController memberController = new MemberController();
+
+        Map<String, User> sessions = new HashMap<>();
 
         /*
          LOGIN ROUTE
@@ -45,12 +49,25 @@ public class Main {
                 String body = new String(exchange.getRequestBody().readAllBytes());
                 Map<String,String> params = parseFormData(body);
 
-                String result = authController.login(
+                User user = authController.authenticateUser(
                         params.get("username"),
                         params.get("password")
                 );
 
-                redirect(exchange,"/" + result);
+                if (user == null) {
+                    redirect(exchange, "/login-failed");
+                } else {
+                    String sessionId = UUID.randomUUID().toString();
+                    sessions.put(sessionId, user);
+
+                    exchange.getResponseHeaders().add("Set-Cookie", "SESSION_ID=" + sessionId + "; Path=/");
+
+                    if (user.getRole() == User.Role.ADMIN) {
+                        redirect(exchange, "/admin-dashboard");
+                    } else {
+                        redirect(exchange, "/member-dashboard");
+                    }
+                }
             }
 
             exchange.close();
@@ -596,6 +613,43 @@ public class Main {
             exchange.close();
         });
 
+        server.createContext("/admin/view-matches", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                int eventId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getMatchesPage(eventId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/generate-matches", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.generateMatchesForEvent(eventId);
+
+                redirect(exchange, "/admin/view-matches?eventId=" + eventId);
+            }
+
+            exchange.close();
+        });
+
 
         /*
          MEMBER DASHBOARD ROUTES
@@ -609,7 +663,16 @@ public class Main {
 
         server.createContext("/member/tournaments", exchange -> {
 
-            int currentUserId = 2;
+            User currentUser = getLoggedInUser(exchange, sessions);
+
+            if (currentUser == null || currentUser.getRole() != User.Role.MEMBER) {
+                redirect(exchange, "/login");
+                exchange.close();
+                return;
+            }
+
+            int currentUserId = currentUser.getId();
+
             MemberProfile profile = new MemberService().getProfileByUserId(currentUserId);
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
@@ -646,7 +709,15 @@ public class Main {
 
         server.createContext("/member/profile", exchange -> {
 
-            int currentUserId = 2;
+            User currentUser = getLoggedInUser(exchange, sessions);
+
+            if (currentUser == null || currentUser.getRole() != User.Role.MEMBER) {
+                redirect(exchange, "/login");
+                exchange.close();
+                return;
+            }
+
+            int currentUserId = currentUser.getId();
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
 
@@ -745,6 +816,36 @@ public class Main {
         }
 
         return map;
+    }
+
+    private static String getCookieValue(com.sun.net.httpserver.HttpExchange exchange, String cookieName) {
+        List<String> cookieHeaders = exchange.getRequestHeaders().get("Cookie");
+
+        if (cookieHeaders == null) {
+            return null;
+        }
+
+        for (String header : cookieHeaders) {
+            String[] cookies = header.split(";");
+            for (String cookie : cookies) {
+                String[] parts = cookie.trim().split("=", 2);
+                if (parts.length == 2 && parts[0].equals(cookieName)) {
+                    return parts[1];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static User getLoggedInUser(com.sun.net.httpserver.HttpExchange exchange, Map<String, User> sessions) {
+        String sessionId = getCookieValue(exchange, "SESSION_ID");
+
+        if (sessionId == null) {
+            return null;
+        }
+
+        return sessions.get(sessionId);
     }
 
 }

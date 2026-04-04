@@ -11,6 +11,11 @@ import java.util.*;
 public class TimetableService {
 
     private ClassSessionRepository sessionRepo = new ClassSessionRepository();
+    private List<String> lastGenerationMessages = new ArrayList<>();
+
+    public List<String> getLastGenerationMessages() {
+        return lastGenerationMessages;
+    }
 
     public List<String> generateMultiple(List<GenerationRequest> requests) {
 
@@ -87,6 +92,7 @@ public class TimetableService {
                     req.classId + " (" + req.skillLevel + ").");
         }
 
+        lastGenerationMessages = messages;
         return messages;
     }
 
