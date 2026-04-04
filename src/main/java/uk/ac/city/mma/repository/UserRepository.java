@@ -24,6 +24,7 @@ public class UserRepository {
 
             if (rs.next()) {
                 return new User(
+                        rs.getInt("id"),
                         rs.getString("username"),
                         rs.getString("password"),
                         User.Role.valueOf(rs.getString("role"))

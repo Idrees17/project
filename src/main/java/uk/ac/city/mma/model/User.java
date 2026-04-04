@@ -2,6 +2,7 @@ package uk.ac.city.mma.model;
 
 public class User {
 
+    private int id;
     private String username;
     private String password;
     private Role role;
@@ -11,10 +12,15 @@ public class User {
         MEMBER
     }
 
-    public User(String username, String password, Role role) {
+    public User(int id, String username, String password, Role role) {
+        this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getUsername() {

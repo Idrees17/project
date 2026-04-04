@@ -21,4 +21,8 @@ public class UserController {
             return "member-dashboard";
         }
     }
+
+    public User authenticateUser(String username, String password) {
+        return authService.authenticate(username, password);
+    }
 }
