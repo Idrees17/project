@@ -7,6 +7,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MemberProfileRepository {
 
     public MemberProfile getByUserId(int userId) {
@@ -110,5 +113,108 @@ public class MemberProfileRepository {
         }
 
         return false;
+    }
+
+    public List<MemberProfile> getAllProfiles() {
+
+        List<MemberProfile> profiles = new ArrayList<>();
+
+        String sql = "SELECT * FROM member_profiles ORDER BY last_name, first_name";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                profiles.add(new MemberProfile(
+                        rs.getInt("member_id"),
+                        rs.getInt("user_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getInt("age"),
+                        rs.getInt("height_cm"),
+                        rs.getDouble("weight_kg"),
+                        rs.getString("experience_level"),
+                        rs.getString("preferred_martial_art")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return profiles;
+    }
+
+    public MemberProfile getProfileByMemberId(int memberId) {
+
+        String sql = "SELECT * FROM member_profiles WHERE member_id = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, memberId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new MemberProfile(
+                        rs.getInt("member_id"),
+                        rs.getInt("user_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getInt("age"),
+                        rs.getInt("height_cm"),
+                        rs.getDouble("weight_kg"),
+                        rs.getString("experience_level"),
+                        rs.getString("preferred_martial_art")
+                );
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void deleteProfile(int memberId) {
+
+        String sql = "DELETE FROM member_profiles WHERE member_id = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, memberId);
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateProfileByMemberId(MemberProfile profile) {
+
+        String sql = "UPDATE member_profiles SET " +
+                "first_name = ?, last_name = ?, age = ?, height_cm = ?, weight_kg = ?, " +
+                "experience_level = ?, preferred_martial_art = ? " +
+                "WHERE member_id = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, profile.getFirstName());
+            stmt.setString(2, profile.getLastName());
+            stmt.setInt(3, profile.getAge());
+            stmt.setInt(4, profile.getHeightCm());
+            stmt.setDouble(5, profile.getWeightKg());
+            stmt.setString(6, profile.getExperienceLevel());
+            stmt.setString(7, profile.getPreferredMartialArt());
+            stmt.setInt(8, profile.getMemberId());
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
