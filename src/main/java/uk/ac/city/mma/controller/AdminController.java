@@ -13,6 +13,7 @@ public class AdminController {
     private CoachService coachService = new CoachService();
     private RoomService roomService = new RoomService();
     private List<String> lastGenerationMessages = new ArrayList<>();
+    private MemberService memberService = new MemberService();
 
     public String getClassesPage() {
 
@@ -555,6 +556,154 @@ public class AdminController {
         roomService.updateRoom(roomId, name, capacity);
     }
 
+
+    public String getMembersPage() {
+
+        List<MemberProfile> members = memberService.getAllProfiles();
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Manage Members</h1>");
+
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>ID</th>");
+        html.append("<th>Name</th>");
+        html.append("<th>Age</th>");
+        html.append("<th>Height</th>");
+        html.append("<th>Weight</th>");
+        html.append("<th>Experience</th>");
+        html.append("<th>Preferred Martial Art</th>");
+        html.append("<th>Actions</th>");
+        html.append("</tr>");
+
+        for (MemberProfile m : members) {
+            html.append("<tr>");
+
+            html.append("<td>").append(m.getMemberId()).append("</td>");
+            html.append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>");
+            html.append("<td>").append(m.getAge()).append("</td>");
+            html.append("<td>").append(m.getHeightCm()).append(" cm</td>");
+            html.append("<td>").append(m.getWeightKg()).append(" kg</td>");
+            html.append("<td>").append(m.getExperienceLevel()).append("</td>");
+            html.append("<td>").append(m.getPreferredMartialArt()).append("</td>");
+
+            html.append("<td>");
+
+            html.append("<a href='/admin/edit-member?memberId=")
+                    .append(m.getMemberId())
+                    .append("'>Edit</a> ");
+
+            html.append("<form method='POST' action='/admin/delete-member' style='display:inline;'>");
+            html.append("<input type='hidden' name='memberId' value='")
+                    .append(m.getMemberId())
+                    .append("'>");
+            html.append("<button type='submit'>Delete</button>");
+            html.append("</form>");
+
+            html.append("</td>");
+
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back to Dashboard</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void deleteMember(int memberId) {
+        memberService.deleteProfile(memberId);
+    }
+
+    public String getEditMemberPage(int memberId) {
+
+        MemberProfile member = memberService.getProfileByMemberId(memberId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Edit Member</h1>");
+
+        html.append("<form method='POST' action='/admin/edit-member'>");
+
+        html.append("<input type='hidden' name='memberId' value='")
+                .append(member.getMemberId())
+                .append("'>");
+
+        html.append("First Name: <input name='firstName' value='")
+                .append(member.getFirstName())
+                .append("'><br>");
+
+        html.append("Last Name: <input name='lastName' value='")
+                .append(member.getLastName())
+                .append("'><br>");
+
+        html.append("Age: <input type='number' name='age' value='")
+                .append(member.getAge())
+                .append("'><br>");
+
+        html.append("Height (cm): <input type='number' name='heightCm' value='")
+                .append(member.getHeightCm())
+                .append("'><br>");
+
+        html.append("Weight (kg): <input type='number' step='0.1' name='weightKg' value='")
+                .append(member.getWeightKg())
+                .append("'><br>");
+
+        html.append("Experience Level: <select name='experienceLevel'>");
+
+        html.append("<option value='Beginner'");
+        if ("Beginner".equals(member.getExperienceLevel())) {
+            html.append(" selected");
+        }
+        html.append(">Beginner</option>");
+
+        html.append("<option value='Intermediate'");
+        if ("Intermediate".equals(member.getExperienceLevel())) {
+            html.append(" selected");
+        }
+        html.append(">Intermediate</option>");
+
+        html.append("<option value='Advanced'");
+        if ("Advanced".equals(member.getExperienceLevel())) {
+            html.append(" selected");
+        }
+        html.append(">Advanced</option>");
+
+        html.append("</select><br>");
+
+        html.append("Preferred Martial Art: <input name='preferredMartialArt' value='")
+                .append(member.getPreferredMartialArt())
+                .append("'><br>");
+
+        html.append("<button type='submit'>Update Member</button>");
+        html.append("</form>");
+
+        html.append("<br><button onclick=\"location.href='/admin/members'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void updateMember(int memberId, String firstName, String lastName,
+                             int age, int heightCm, double weightKg,
+                             String experienceLevel, String preferredMartialArt) {
+
+        memberService.updateProfileByMemberId(
+                memberId,
+                firstName,
+                lastName,
+                age,
+                heightCm,
+                weightKg,
+                experienceLevel,
+                preferredMartialArt
+        );
+    }
     private String buildGeneratorConfigHtml(Object index, List<GymClass> classes,
                                             List<Coach> coaches, List<Room> rooms) {
 

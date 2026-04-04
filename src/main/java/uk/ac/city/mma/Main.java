@@ -409,6 +409,84 @@ public class Main {
         });
 
         /*
+         ADMIN MEMBER CONTROLS
+        */
+
+        server.createContext("/admin/members", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String html = adminController.getMembersPage();
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/delete-member", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.deleteMember(
+                        Integer.parseInt(params.get("memberId"))
+                );
+
+                redirect(exchange, "/admin/members");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/edit-member", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                int memberId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getEditMemberPage(memberId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.updateMember(
+                        Integer.parseInt(params.get("memberId")),
+                        params.get("firstName"),
+                        params.get("lastName"),
+                        Integer.parseInt(params.get("age")),
+                        Integer.parseInt(params.get("heightCm")),
+                        Double.parseDouble(params.get("weightKg")),
+                        params.get("experienceLevel"),
+                        params.get("preferredMartialArt")
+                );
+
+                redirect(exchange, "/admin/members");
+            }
+
+            exchange.close();
+        });
+
+
+        /*
          MEMBER DASHBOARD ROUTES
         */
 
@@ -462,6 +540,13 @@ public class Main {
 
             exchange.close();
         });
+
+        /*
+         PLACEHOLDER FOR TOURNAMENT PAGE
+        */
+
+        server.createContext("/admin/tournaments", e ->
+                serveHtml(e, "admin-tournaments.html"));
 
 
         server.start();
