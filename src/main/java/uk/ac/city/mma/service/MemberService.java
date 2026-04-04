@@ -3,6 +3,8 @@ package uk.ac.city.mma.service;
 import uk.ac.city.mma.model.MemberProfile;
 import uk.ac.city.mma.repository.MemberProfileRepository;
 
+import java.util.List;
+
 public class MemberService {
 
     private MemberProfileRepository repository = new MemberProfileRepository();
@@ -30,5 +32,34 @@ public class MemberService {
         } else {
             repository.createProfile(profile);
         }
+    }
+
+    public List<MemberProfile> getAllProfiles() {
+        return repository.getAllProfiles();
+    }
+
+    public MemberProfile getProfileByMemberId(int memberId) {
+        return repository.getProfileByMemberId(memberId);
+    }
+
+    public void deleteProfile(int memberId) {
+        repository.deleteProfile(memberId);
+    }
+
+    public void updateProfileByMemberId(int memberId, String firstName, String lastName,
+                                        int age, int heightCm, double weightKg,
+                                        String experienceLevel, String preferredMartialArt) {
+
+        MemberProfile profile = new MemberProfile();
+        profile.setMemberId(memberId);
+        profile.setFirstName(firstName);
+        profile.setLastName(lastName);
+        profile.setAge(age);
+        profile.setHeightCm(heightCm);
+        profile.setWeightKg(weightKg);
+        profile.setExperienceLevel(experienceLevel);
+        profile.setPreferredMartialArt(preferredMartialArt);
+
+        repository.updateProfileByMemberId(profile);
     }
 }
