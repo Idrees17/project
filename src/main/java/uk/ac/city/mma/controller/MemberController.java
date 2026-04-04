@@ -1,11 +1,14 @@
 package uk.ac.city.mma.controller;
 
-import uk.ac.city.mma.model.MemberProfile;
-import uk.ac.city.mma.service.MemberService;
+import uk.ac.city.mma.model.*;
+import uk.ac.city.mma.service.*;
+
+import java.util.List;
 
 public class MemberController {
 
     private MemberService memberService = new MemberService();
+    private EventService eventService = new EventService();
 
     public String getProfilePage(int userId) {
 
@@ -43,9 +46,25 @@ public class MemberController {
         html.append("Weight (kg): <input type='number' step='0.1' name='weightKg' value='").append(weightKg).append("'><br>");
 
         html.append("Experience Level: <select name='experienceLevel'>");
-        html.append(option("Beginner", experienceLevel));
-        html.append(option("Intermediate", experienceLevel));
-        html.append(option("Advanced", experienceLevel));
+
+        html.append("<option value='Beginner'");
+        if ("Beginner".equals(experienceLevel)) {
+            html.append(" selected");
+        }
+        html.append(">Beginner</option>");
+
+        html.append("<option value='Intermediate'");
+        if ("Intermediate".equals(experienceLevel)) {
+            html.append(" selected");
+        }
+        html.append(">Intermediate</option>");
+
+        html.append("<option value='Advanced'");
+        if ("Advanced".equals(experienceLevel)) {
+            html.append(" selected");
+        }
+        html.append(">Advanced</option>");
+
         html.append("</select><br>");
 
         html.append("Preferred Martial Art: <input name='preferredMartialArt' value='")
@@ -77,14 +96,54 @@ public class MemberController {
         );
     }
 
-    private String safe(String value) {
-        return value == null ? "" : value;
+    public String getTournamentsPage(int memberId) {
+
+        List<Event> events = eventService.getAllEvents();
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Tournament Registration</h1>");
+
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>Name</th>");
+        html.append("<th>Date</th>");
+        html.append("<th>Location</th>");
+        html.append("<th>Status</th>");
+        html.append("<th>Action</th>");
+        html.append("</tr>");
+
+        for (Event e : events) {
+            html.append("<tr>");
+            html.append("<td>").append(e.getEventName()).append("</td>");
+            html.append("<td>").append(e.getEventDate()).append("</td>");
+            html.append("<td>").append(e.getLocation()).append("</td>");
+            html.append("<td>").append(e.getStatus()).append("</td>");
+
+            html.append("<td>");
+            html.append("<form method='POST' action='/member/tournaments' style='display:inline;'>");
+            html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
+            html.append("<button type='submit'>Register</button>");
+            html.append("</form>");
+            html.append("</td>");
+
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
     }
 
-    private String option(String value, String selectedValue) {
-        if (value.equals(selectedValue)) {
-            return "<option value='" + value + "' selected>" + value + "</option>";
-        }
-        return "<option value='" + value + "'>" + value + "</option>";
+    public void registerForTournament(int memberId, int eventId) {
+        eventService.registerMemberForEvent(eventId, memberId);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

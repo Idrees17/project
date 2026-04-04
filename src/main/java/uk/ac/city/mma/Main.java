@@ -2,6 +2,8 @@ package uk.ac.city.mma;
 
 import com.sun.net.httpserver.HttpServer;
 import uk.ac.city.mma.controller.*;
+import uk.ac.city.mma.model.*;
+import uk.ac.city.mma.service.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -485,6 +487,115 @@ public class Main {
             exchange.close();
         });
 
+        /*
+         ADMIN EVENT CONTROLS
+        */
+
+        server.createContext("/admin/tournaments", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String html = adminController.getTournamentsPage();
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.createEvent(
+                        params.get("eventName"),
+                        params.get("eventDate"),
+                        params.get("location"),
+                        params.get("status")
+                );
+
+                redirect(exchange, "/admin/tournaments");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/delete-tournament", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.deleteEvent(
+                        Integer.parseInt(params.get("eventId"))
+                );
+
+                redirect(exchange, "/admin/tournaments");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/edit-tournament", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                int eventId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getEditTournamentPage(eventId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.updateEvent(
+                        Integer.parseInt(params.get("eventId")),
+                        params.get("eventName"),
+                        params.get("eventDate"),
+                        params.get("location"),
+                        params.get("status")
+                );
+
+                redirect(exchange, "/admin/tournaments");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/view-entrants", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                int eventId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getEntrantsPage(eventId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            exchange.close();
+        });
+
 
         /*
          MEMBER DASHBOARD ROUTES
@@ -496,8 +607,38 @@ public class Main {
         server.createContext("/member/memberships", e ->
                 serveHtml(e, "member-memberships.html"));
 
-        server.createContext("/member/tournaments", e ->
-                serveHtml(e, "member-tournaments.html"));
+        server.createContext("/member/tournaments", exchange -> {
+
+            int currentUserId = 2;
+            MemberProfile profile = new MemberService().getProfileByUserId(currentUserId);
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String html = memberController.getTournamentsPage(profile.getMemberId());
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                memberController.registerForTournament(
+                        profile.getMemberId(),
+                        Integer.parseInt(params.get("eventId"))
+                );
+
+                redirect(exchange, "/member/tournaments");
+            }
+
+            exchange.close();
+        });
 
         /*
          MEMBER PROFILE
@@ -540,13 +681,6 @@ public class Main {
 
             exchange.close();
         });
-
-        /*
-         PLACEHOLDER FOR TOURNAMENT PAGE
-        */
-
-        server.createContext("/admin/tournaments", e ->
-                serveHtml(e, "admin-tournaments.html"));
 
 
         server.start();

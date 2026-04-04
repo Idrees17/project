@@ -14,6 +14,7 @@ public class AdminController {
     private RoomService roomService = new RoomService();
     private List<String> lastGenerationMessages = new ArrayList<>();
     private MemberService memberService = new MemberService();
+    private EventService eventService = new EventService();
 
     public String getClassesPage() {
 
@@ -704,6 +705,7 @@ public class AdminController {
                 preferredMartialArt
         );
     }
+
     private String buildGeneratorConfigHtml(Object index, List<GymClass> classes,
                                             List<Coach> coaches, List<Room> rooms) {
 
@@ -753,6 +755,165 @@ public class AdminController {
 
         html.append("<button type='button' onclick='removeConfig(this)'>Remove Configuration</button>");
         html.append("</fieldset>");
+
+        return html.toString();
+    }
+
+    public String getTournamentsPage() {
+
+        List<Event> events = eventService.getAllEvents();
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Manage Tournament</h1>");
+
+        html.append("<h2>Create Event</h2>");
+        html.append("<form method='POST' action='/admin/tournaments'>");
+        html.append("Event Name: <input name='eventName'><br>");
+        html.append("Date: <input type='date' name='eventDate'><br>");
+        html.append("Location: <input name='location'><br>");
+        html.append("Status: <select name='status'>");
+        html.append("<option value='Upcoming'>Upcoming</option>");
+        html.append("<option value='Open'>Open</option>");
+        html.append("<option value='Closed'>Closed</option>");
+        html.append("<option value='Completed'>Completed</option>");
+        html.append("</select><br>");
+        html.append("<button type='submit'>Create Event</button>");
+        html.append("</form><br>");
+
+        html.append("<h2>Existing Events</h2>");
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>ID</th>");
+        html.append("<th>Name</th>");
+        html.append("<th>Date</th>");
+        html.append("<th>Location</th>");
+        html.append("<th>Status</th>");
+        html.append("<th>Actions</th>");
+        html.append("</tr>");
+
+        for (Event e : events) {
+            html.append("<tr>");
+            html.append("<td>").append(e.getEventId()).append("</td>");
+            html.append("<td>").append(e.getEventName()).append("</td>");
+            html.append("<td>").append(e.getEventDate()).append("</td>");
+            html.append("<td>").append(e.getLocation()).append("</td>");
+            html.append("<td>").append(e.getStatus()).append("</td>");
+
+            html.append("<td>");
+            html.append("<a href='/admin/edit-tournament?eventId=").append(e.getEventId()).append("'>Edit</a> ");
+            html.append("<a href='/admin/view-entrants?eventId=").append(e.getEventId()).append("'>View Entrants</a> ");
+
+            html.append("<form method='POST' action='/admin/delete-tournament' style='display:inline;'>");
+            html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
+            html.append("<button type='submit'>Delete</button>");
+            html.append("</form>");
+
+            html.append("</td>");
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back to Dashboard</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void createEvent(String eventName, String eventDate, String location, String status) {
+        eventService.createEvent(eventName, eventDate, location, status);
+    }
+
+    public void deleteEvent(int eventId) {
+        eventService.deleteEvent(eventId);
+    }
+
+    public void updateEvent(int eventId, String eventName, String eventDate, String location, String status) {
+        eventService.updateEvent(eventId, eventName, eventDate, location, status);
+    }
+
+    public String getEditTournamentPage(int eventId) {
+
+        Event event = eventService.getEventById(eventId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Edit Tournament</h1>");
+
+        html.append("<form method='POST' action='/admin/edit-tournament'>");
+        html.append("<input type='hidden' name='eventId' value='").append(event.getEventId()).append("'>");
+
+        html.append("Event Name: <input name='eventName' value='").append(event.getEventName()).append("'><br>");
+        html.append("Date: <input type='date' name='eventDate' value='").append(event.getEventDate()).append("'><br>");
+        html.append("Location: <input name='location' value='").append(event.getLocation()).append("'><br>");
+
+        html.append("Status: <select name='status'>");
+
+        html.append("<option value='Upcoming'");
+        if ("Upcoming".equals(event.getStatus())) html.append(" selected");
+        html.append(">Upcoming</option>");
+
+        html.append("<option value='Open'");
+        if ("Open".equals(event.getStatus())) html.append(" selected");
+        html.append(">Open</option>");
+
+        html.append("<option value='Closed'");
+        if ("Closed".equals(event.getStatus())) html.append(" selected");
+        html.append(">Closed</option>");
+
+        html.append("<option value='Completed'");
+        if ("Completed".equals(event.getStatus())) html.append(" selected");
+        html.append(">Completed</option>");
+
+        html.append("</select><br>");
+
+        html.append("<button type='submit'>Update Event</button>");
+        html.append("</form>");
+
+        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public String getEntrantsPage(int eventId) {
+
+        Event event = eventService.getEventById(eventId);
+        List<MemberProfile> entrants = eventService.getEntrantsForEvent(eventId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Entrants for ").append(event.getEventName()).append("</h1>");
+
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>ID</th>");
+        html.append("<th>Name</th>");
+        html.append("<th>Age</th>");
+        html.append("<th>Weight</th>");
+        html.append("<th>Experience</th>");
+        html.append("<th>Preferred Martial Art</th>");
+        html.append("</tr>");
+
+        for (MemberProfile m : entrants) {
+            html.append("<tr>");
+            html.append("<td>").append(m.getMemberId()).append("</td>");
+            html.append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>");
+            html.append("<td>").append(m.getAge()).append("</td>");
+            html.append("<td>").append(m.getWeightKg()).append(" kg</td>");
+            html.append("<td>").append(m.getExperienceLevel()).append("</td>");
+            html.append("<td>").append(m.getPreferredMartialArt()).append("</td>");
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
+        html.append("</body></html>");
 
         return html.toString();
     }
