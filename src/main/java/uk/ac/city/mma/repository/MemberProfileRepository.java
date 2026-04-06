@@ -6,7 +6,6 @@ import uk.ac.city.mma.model.MemberProfile;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,9 +29,7 @@ public class MemberProfileRepository {
                         rs.getString("last_name"),
                         rs.getInt("age"),
                         rs.getInt("height_cm"),
-                        rs.getDouble("weight_kg"),
-                        rs.getString("experience_level"),
-                        rs.getString("preferred_martial_art")
+                        rs.getDouble("weight_kg")
                 );
             }
 
@@ -46,8 +43,8 @@ public class MemberProfileRepository {
     public void createProfile(MemberProfile profile) {
 
         String sql = "INSERT INTO member_profiles " +
-                "(user_id, first_name, last_name, age, height_cm, weight_kg, experience_level, preferred_martial_art) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                "(user_id, first_name, last_name, age, height_cm, weight_kg) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -58,8 +55,6 @@ public class MemberProfileRepository {
             stmt.setInt(4, profile.getAge());
             stmt.setInt(5, profile.getHeightCm());
             stmt.setDouble(6, profile.getWeightKg());
-            stmt.setString(7, profile.getExperienceLevel());
-            stmt.setString(8, profile.getPreferredMartialArt());
 
             stmt.executeUpdate();
 
@@ -71,8 +66,7 @@ public class MemberProfileRepository {
     public void updateProfile(MemberProfile profile) {
 
         String sql = "UPDATE member_profiles SET " +
-                "first_name = ?, last_name = ?, age = ?, height_cm = ?, weight_kg = ?, " +
-                "experience_level = ?, preferred_martial_art = ? " +
+                "first_name = ?, last_name = ?, age = ?, height_cm = ?, weight_kg = ? " +
                 "WHERE user_id = ?";
 
         try (Connection conn = MySQLConnection.getConnection();
@@ -83,9 +77,7 @@ public class MemberProfileRepository {
             stmt.setInt(3, profile.getAge());
             stmt.setInt(4, profile.getHeightCm());
             stmt.setDouble(5, profile.getWeightKg());
-            stmt.setString(6, profile.getExperienceLevel());
-            stmt.setString(7, profile.getPreferredMartialArt());
-            stmt.setInt(8, profile.getUserId());
+            stmt.setInt(6, profile.getUserId());
 
             stmt.executeUpdate();
 
@@ -133,9 +125,7 @@ public class MemberProfileRepository {
                         rs.getString("last_name"),
                         rs.getInt("age"),
                         rs.getInt("height_cm"),
-                        rs.getDouble("weight_kg"),
-                        rs.getString("experience_level"),
-                        rs.getString("preferred_martial_art")
+                        rs.getDouble("weight_kg")
                 ));
             }
 
@@ -164,9 +154,7 @@ public class MemberProfileRepository {
                         rs.getString("last_name"),
                         rs.getInt("age"),
                         rs.getInt("height_cm"),
-                        rs.getDouble("weight_kg"),
-                        rs.getString("experience_level"),
-                        rs.getString("preferred_martial_art")
+                        rs.getDouble("weight_kg")
                 );
             }
 
@@ -195,8 +183,7 @@ public class MemberProfileRepository {
     public void updateProfileByMemberId(MemberProfile profile) {
 
         String sql = "UPDATE member_profiles SET " +
-                "first_name = ?, last_name = ?, age = ?, height_cm = ?, weight_kg = ?, " +
-                "experience_level = ?, preferred_martial_art = ? " +
+                "first_name = ?, last_name = ?, age = ?, height_cm = ?, weight_kg = ? " +
                 "WHERE member_id = ?";
 
         try (Connection conn = MySQLConnection.getConnection();
@@ -207,9 +194,7 @@ public class MemberProfileRepository {
             stmt.setInt(3, profile.getAge());
             stmt.setInt(4, profile.getHeightCm());
             stmt.setDouble(5, profile.getWeightKg());
-            stmt.setString(6, profile.getExperienceLevel());
-            stmt.setString(7, profile.getPreferredMartialArt());
-            stmt.setInt(8, profile.getMemberId());
+            stmt.setInt(6, profile.getMemberId());
 
             stmt.executeUpdate();
 

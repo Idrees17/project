@@ -9,15 +9,12 @@ public class MemberProfile {
     private int age;
     private int heightCm;
     private double weightKg;
-    private String experienceLevel;
-    private String preferredMartialArt;
 
     public MemberProfile() {
     }
 
     public MemberProfile(int memberId, int userId, String firstName, String lastName,
-                         int age, int heightCm, double weightKg,
-                         String experienceLevel, String preferredMartialArt) {
+                         int age, int heightCm, double weightKg) {
         this.memberId = memberId;
         this.userId = userId;
         this.firstName = firstName;
@@ -25,8 +22,6 @@ public class MemberProfile {
         this.age = age;
         this.heightCm = heightCm;
         this.weightKg = weightKg;
-        this.experienceLevel = experienceLevel;
-        this.preferredMartialArt = preferredMartialArt;
     }
 
     public int getMemberId() {
@@ -83,21 +78,5 @@ public class MemberProfile {
 
     public void setWeightKg(double weightKg) {
         this.weightKg = weightKg;
-    }
-
-    public String getExperienceLevel() {
-        return experienceLevel;
-    }
-
-    public void setExperienceLevel(String experienceLevel) {
-        this.experienceLevel = experienceLevel;
-    }
-
-    public String getPreferredMartialArt() {
-        return preferredMartialArt;
-    }
-
-    public void setPreferredMartialArt(String preferredMartialArt) {
-        this.preferredMartialArt = preferredMartialArt;
     }
 }
