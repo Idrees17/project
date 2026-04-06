@@ -493,9 +493,7 @@ public class Main {
                         params.get("lastName"),
                         Integer.parseInt(params.get("age")),
                         Integer.parseInt(params.get("heightCm")),
-                        Double.parseDouble(params.get("weightKg")),
-                        params.get("experienceLevel"),
-                        params.get("preferredMartialArt")
+                        Double.parseDouble(params.get("weightKg"))
                 );
 
                 redirect(exchange, "/admin/members");
@@ -531,7 +529,9 @@ public class Main {
                         params.get("eventName"),
                         params.get("eventDate"),
                         params.get("location"),
-                        params.get("status")
+                        params.get("status"),
+                        params.get("format"),
+                        params.get("allowedMartialArts")
                 );
 
                 redirect(exchange, "/admin/tournaments");
@@ -584,7 +584,9 @@ public class Main {
                         params.get("eventName"),
                         params.get("eventDate"),
                         params.get("location"),
-                        params.get("status")
+                        params.get("status"),
+                        params.get("format"),
+                        params.get("allowedMartialArts")
                 );
 
                 redirect(exchange, "/admin/tournaments");
@@ -671,9 +673,20 @@ public class Main {
                 return;
             }
 
-            int currentUserId = currentUser.getId();
+            MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
 
-            MemberProfile profile = new MemberService().getProfileByUserId(currentUserId);
+            if (profile == null) {
+                String html = "<html><body>" +
+                        "<h1>Please complete your profile first.</h1>" +
+                        "<button onclick=\"location.href='/member/profile'\">Go to My Profile</button>" +
+                        "</body></html>";
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+                return;
+            }
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
 
@@ -694,7 +707,9 @@ public class Main {
 
                 memberController.registerForTournament(
                         profile.getMemberId(),
-                        Integer.parseInt(params.get("eventId"))
+                        Integer.parseInt(params.get("eventId")),
+                        params.get("chosenMartialArt"),
+                        params.get("experienceLevel")
                 );
 
                 redirect(exchange, "/member/tournaments");
@@ -742,9 +757,7 @@ public class Main {
                         params.get("lastName"),
                         Integer.parseInt(params.get("age")),
                         Integer.parseInt(params.get("heightCm")),
-                        Double.parseDouble(params.get("weightKg")),
-                        params.get("experienceLevel"),
-                        params.get("preferredMartialArt")
+                        Double.parseDouble(params.get("weightKg"))
                 );
 
                 redirect(exchange, "/member/profile");

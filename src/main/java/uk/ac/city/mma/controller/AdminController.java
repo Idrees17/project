@@ -571,8 +571,6 @@ public class AdminController {
         html.append("<th>Age</th>");
         html.append("<th>Height</th>");
         html.append("<th>Weight</th>");
-        html.append("<th>Experience</th>");
-        html.append("<th>Preferred Martial Art</th>");
         html.append("<th>Actions</th>");
         html.append("</tr>");
 
@@ -584,8 +582,6 @@ public class AdminController {
             html.append("<td>").append(m.getAge()).append("</td>");
             html.append("<td>").append(m.getHeightCm()).append(" cm</td>");
             html.append("<td>").append(m.getWeightKg()).append(" kg</td>");
-            html.append("<td>").append(m.getExperienceLevel()).append("</td>");
-            html.append("<td>").append(m.getPreferredMartialArt()).append("</td>");
 
             html.append("<td>");
 
@@ -601,7 +597,6 @@ public class AdminController {
             html.append("</form>");
 
             html.append("</td>");
-
             html.append("</tr>");
         }
 
@@ -652,32 +647,6 @@ public class AdminController {
                 .append(member.getWeightKg())
                 .append("'><br>");
 
-        html.append("Experience Level: <select name='experienceLevel'>");
-
-        html.append("<option value='Beginner'");
-        if ("Beginner".equals(member.getExperienceLevel())) {
-            html.append(" selected");
-        }
-        html.append(">Beginner</option>");
-
-        html.append("<option value='Intermediate'");
-        if ("Intermediate".equals(member.getExperienceLevel())) {
-            html.append(" selected");
-        }
-        html.append(">Intermediate</option>");
-
-        html.append("<option value='Advanced'");
-        if ("Advanced".equals(member.getExperienceLevel())) {
-            html.append(" selected");
-        }
-        html.append(">Advanced</option>");
-
-        html.append("</select><br>");
-
-        html.append("Preferred Martial Art: <input name='preferredMartialArt' value='")
-                .append(member.getPreferredMartialArt())
-                .append("'><br>");
-
         html.append("<button type='submit'>Update Member</button>");
         html.append("</form>");
 
@@ -688,8 +657,7 @@ public class AdminController {
     }
 
     public void updateMember(int memberId, String firstName, String lastName,
-                             int age, int heightCm, double weightKg,
-                             String experienceLevel, String preferredMartialArt) {
+                             int age, int heightCm, double weightKg) {
 
         memberService.updateProfileByMemberId(
                 memberId,
@@ -697,9 +665,7 @@ public class AdminController {
                 lastName,
                 age,
                 heightCm,
-                weightKg,
-                experienceLevel,
-                preferredMartialArt
+                weightKg
         );
     }
 
@@ -767,17 +733,44 @@ public class AdminController {
 
         html.append("<h2>Create Event</h2>");
         html.append("<form method='POST' action='/admin/tournaments'>");
+
         html.append("Event Name: <input name='eventName'><br>");
         html.append("Date: <input type='date' name='eventDate'><br>");
         html.append("Location: <input name='location'><br>");
+
         html.append("Status: <select name='status'>");
         html.append("<option value='Upcoming'>Upcoming</option>");
         html.append("<option value='Open'>Open</option>");
         html.append("<option value='Closed'>Closed</option>");
         html.append("<option value='Completed'>Completed</option>");
         html.append("</select><br>");
-        html.append("<button type='submit'>Create Event</button>");
+
+        html.append("Format: <select name='format'>");
+        html.append("<option value='MATCHES'>Matches</option>");
+        html.append("<option value='BRACKET'>Bracket</option>");
+        html.append("</select><br>");
+
+        html.append("<p>Allowed Martial Arts:</p>");
+
+        html.append("<label><input type='checkbox' value='MMA' onchange='updateArts()'> MMA</label><br>");
+        html.append("<label><input type='checkbox' value='Boxing' onchange='updateArts()'> Boxing</label><br>");
+        html.append("<label><input type='checkbox' value='Kickboxing' onchange='updateArts()'> Kickboxing</label><br>");
+        html.append("<label><input type='checkbox' value='Muay Thai' onchange='updateArts()'> Muay Thai</label><br>");
+        html.append("<label><input type='checkbox' value='Jiu Jitsu' onchange='updateArts()'> Jiu Jitsu</label><br>");
+        html.append("<label><input type='checkbox' value='Wrestling' onchange='updateArts()'> Wrestling</label><br>");
+
+        html.append("<input type='hidden' id='allowedMartialArts' name='allowedMartialArts'>");
+
+        html.append("<br><button type='submit'>Create Event</button>");
         html.append("</form><br>");
+
+        html.append("<script>");
+        html.append("function updateArts(){");
+        html.append("  const checked = document.querySelectorAll(\"input[type='checkbox']:checked\");");
+        html.append("  const values = Array.from(checked).map(cb => cb.value);");
+        html.append("  document.getElementById('allowedMartialArts').value = values.join(',');");
+        html.append("}");
+        html.append("</script>");
 
         html.append("<h2>Existing Events</h2>");
         html.append("<table border='1'>");
@@ -787,6 +780,8 @@ public class AdminController {
         html.append("<th>Date</th>");
         html.append("<th>Location</th>");
         html.append("<th>Status</th>");
+        html.append("<th>Format</th>");
+        html.append("<th>Allowed Martial Arts</th>");
         html.append("<th>Actions</th>");
         html.append("</tr>");
 
@@ -797,6 +792,8 @@ public class AdminController {
             html.append("<td>").append(e.getEventDate()).append("</td>");
             html.append("<td>").append(e.getLocation()).append("</td>");
             html.append("<td>").append(e.getStatus()).append("</td>");
+            html.append("<td>").append(e.getFormat()).append("</td>");
+            html.append("<td>").append(e.getAllowedMartialArts()).append("</td>");
 
             html.append("<td>");
             html.append("<a href='/admin/edit-tournament?eventId=").append(e.getEventId()).append("'>Edit</a> ");
@@ -820,21 +817,25 @@ public class AdminController {
         return html.toString();
     }
 
-    public void createEvent(String eventName, String eventDate, String location, String status) {
-        eventService.createEvent(eventName, eventDate, location, status);
+    public void createEvent(String eventName, String eventDate, String location,
+                            String status, String format, String allowedMartialArts) {
+        eventService.createEvent(eventName, eventDate, location, status, format, allowedMartialArts);
     }
 
     public void deleteEvent(int eventId) {
         eventService.deleteEvent(eventId);
     }
 
-    public void updateEvent(int eventId, String eventName, String eventDate, String location, String status) {
-        eventService.updateEvent(eventId, eventName, eventDate, location, status);
+    public void updateEvent(int eventId, String eventName, String eventDate, String location,
+                            String status, String format, String allowedMartialArts) {
+        eventService.updateEvent(eventId, eventName, eventDate, location, status, format, allowedMartialArts);
     }
 
     public String getEditTournamentPage(int eventId) {
 
         Event event = eventService.getEventById(eventId);
+
+        String allowed = event.getAllowedMartialArts() == null ? "" : event.getAllowedMartialArts();
 
         StringBuilder html = new StringBuilder();
 
@@ -868,6 +869,19 @@ public class AdminController {
 
         html.append("</select><br>");
 
+        html.append("Format: <select name='format'>");
+        html.append("<option value='MATCHES'");
+        if ("MATCHES".equals(event.getFormat())) html.append(" selected");
+        html.append(">Matches</option>");
+
+        html.append("<option value='BRACKET'");
+        if ("BRACKET".equals(event.getFormat())) html.append(" selected");
+        html.append(">Bracket</option>");
+        html.append("</select><br>");
+
+        html.append("Allowed Martial Arts (comma separated): ");
+        html.append("<input name='allowedMartialArts' value='").append(allowed).append("'><br>");
+
         html.append("<button type='submit'>Update Event</button>");
         html.append("</form>");
 
@@ -893,8 +907,6 @@ public class AdminController {
         html.append("<th>Name</th>");
         html.append("<th>Age</th>");
         html.append("<th>Weight</th>");
-        html.append("<th>Experience</th>");
-        html.append("<th>Preferred Martial Art</th>");
         html.append("</tr>");
 
         for (MemberProfile m : entrants) {
@@ -903,8 +915,6 @@ public class AdminController {
             html.append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>");
             html.append("<td>").append(m.getAge()).append("</td>");
             html.append("<td>").append(m.getWeightKg()).append(" kg</td>");
-            html.append("<td>").append(m.getExperienceLevel()).append("</td>");
-            html.append("<td>").append(m.getPreferredMartialArt()).append("</td>");
             html.append("</tr>");
         }
 
