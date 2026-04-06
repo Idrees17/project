@@ -14,8 +14,7 @@ public class MemberService {
     }
 
     public void saveProfile(int userId, String firstName, String lastName,
-                            int age, int heightCm, double weightKg,
-                            String experienceLevel, String preferredMartialArt) {
+                            int age, int heightCm, double weightKg) {
 
         MemberProfile profile = new MemberProfile();
         profile.setUserId(userId);
@@ -24,8 +23,6 @@ public class MemberService {
         profile.setAge(age);
         profile.setHeightCm(heightCm);
         profile.setWeightKg(weightKg);
-        profile.setExperienceLevel(experienceLevel);
-        profile.setPreferredMartialArt(preferredMartialArt);
 
         if (repository.existsForUser(userId)) {
             repository.updateProfile(profile);
@@ -47,8 +44,7 @@ public class MemberService {
     }
 
     public void updateProfileByMemberId(int memberId, String firstName, String lastName,
-                                        int age, int heightCm, double weightKg,
-                                        String experienceLevel, String preferredMartialArt) {
+                                        int age, int heightCm, double weightKg) {
 
         MemberProfile profile = new MemberProfile();
         profile.setMemberId(memberId);
@@ -57,8 +53,6 @@ public class MemberService {
         profile.setAge(age);
         profile.setHeightCm(heightCm);
         profile.setWeightKg(weightKg);
-        profile.setExperienceLevel(experienceLevel);
-        profile.setPreferredMartialArt(preferredMartialArt);
 
         repository.updateProfileByMemberId(profile);
     }

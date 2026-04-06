@@ -1,7 +1,9 @@
 package uk.ac.city.mma.controller;
 
-import uk.ac.city.mma.model.*;
-import uk.ac.city.mma.service.*;
+import uk.ac.city.mma.model.Event;
+import uk.ac.city.mma.model.MemberProfile;
+import uk.ac.city.mma.service.EventService;
+import uk.ac.city.mma.service.MemberService;
 
 import java.util.List;
 
@@ -19,8 +21,6 @@ public class MemberController {
         String age = "";
         String heightCm = "";
         String weightKg = "";
-        String experienceLevel = "";
-        String preferredMartialArt = "";
 
         if (profile != null) {
             firstName = safe(profile.getFirstName());
@@ -28,8 +28,6 @@ public class MemberController {
             age = String.valueOf(profile.getAge());
             heightCm = String.valueOf(profile.getHeightCm());
             weightKg = String.valueOf(profile.getWeightKg());
-            experienceLevel = safe(profile.getExperienceLevel());
-            preferredMartialArt = safe(profile.getPreferredMartialArt());
         }
 
         StringBuilder html = new StringBuilder();
@@ -45,32 +43,6 @@ public class MemberController {
         html.append("Height (cm): <input type='number' name='heightCm' value='").append(heightCm).append("'><br>");
         html.append("Weight (kg): <input type='number' step='0.1' name='weightKg' value='").append(weightKg).append("'><br>");
 
-        html.append("Experience Level: <select name='experienceLevel'>");
-
-        html.append("<option value='Beginner'");
-        if ("Beginner".equals(experienceLevel)) {
-            html.append(" selected");
-        }
-        html.append(">Beginner</option>");
-
-        html.append("<option value='Intermediate'");
-        if ("Intermediate".equals(experienceLevel)) {
-            html.append(" selected");
-        }
-        html.append(">Intermediate</option>");
-
-        html.append("<option value='Advanced'");
-        if ("Advanced".equals(experienceLevel)) {
-            html.append(" selected");
-        }
-        html.append(">Advanced</option>");
-
-        html.append("</select><br>");
-
-        html.append("Preferred Martial Art: <input name='preferredMartialArt' value='")
-                .append(preferredMartialArt)
-                .append("'><br>");
-
         html.append("<button type='submit'>Save Profile</button>");
         html.append("</form>");
 
@@ -81,8 +53,7 @@ public class MemberController {
     }
 
     public void saveProfile(int userId, String firstName, String lastName,
-                            int age, int heightCm, double weightKg,
-                            String experienceLevel, String preferredMartialArt) {
+                            int age, int heightCm, double weightKg) {
 
         memberService.saveProfile(
                 userId,
@@ -90,9 +61,7 @@ public class MemberController {
                 lastName,
                 age,
                 heightCm,
-                weightKg,
-                experienceLevel,
-                preferredMartialArt
+                weightKg
         );
     }
 
@@ -111,7 +80,8 @@ public class MemberController {
         html.append("<th>Date</th>");
         html.append("<th>Location</th>");
         html.append("<th>Status</th>");
-        html.append("<th>Action</th>");
+        html.append("<th>Allowed Martial Arts</th>");
+        html.append("<th>Register</th>");
         html.append("</tr>");
 
         for (Event e : events) {
@@ -120,14 +90,39 @@ public class MemberController {
             html.append("<td>").append(e.getEventDate()).append("</td>");
             html.append("<td>").append(e.getLocation()).append("</td>");
             html.append("<td>").append(e.getStatus()).append("</td>");
+            html.append("<td>").append(e.getAllowedMartialArts() == null ? "" : e.getAllowedMartialArts()).append("</td>");
 
             html.append("<td>");
-            html.append("<form method='POST' action='/member/tournaments' style='display:inline;'>");
-            html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
-            html.append("<button type='submit'>Register</button>");
-            html.append("</form>");
-            html.append("</td>");
 
+            if (e.getAllowedMartialArts() == null || e.getAllowedMartialArts().isBlank()) {
+                html.append("No martial arts configured");
+            } else {
+                html.append("<form method='POST' action='/member/tournaments' style='display:inline;'>");
+                html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
+
+                html.append("Martial Art: <select name='chosenMartialArt'>");
+                String[] arts = e.getAllowedMartialArts().split(",");
+                for (String art : arts) {
+                    String trimmed = art.trim();
+                    if (!trimmed.isEmpty()) {
+                        html.append("<option value='").append(trimmed).append("'>")
+                                .append(trimmed)
+                                .append("</option>");
+                    }
+                }
+                html.append("</select><br>");
+
+                html.append("Experience Level: <select name='experienceLevel'>");
+                html.append("<option value='Beginner'>Beginner</option>");
+                html.append("<option value='Intermediate'>Intermediate</option>");
+                html.append("<option value='Advanced'>Advanced</option>");
+                html.append("</select><br>");
+
+                html.append("<button type='submit'>Register</button>");
+                html.append("</form>");
+            }
+
+            html.append("</td>");
             html.append("</tr>");
         }
 
@@ -139,8 +134,8 @@ public class MemberController {
         return html.toString();
     }
 
-    public void registerForTournament(int memberId, int eventId) {
-        eventService.registerMemberForEvent(eventId, memberId);
+    public void registerForTournament(int memberId, int eventId, String chosenMartialArt, String experienceLevel) {
+        eventService.registerMemberForEvent(eventId, memberId, chosenMartialArt, experienceLevel);
     }
 
     private String safe(String value) {
