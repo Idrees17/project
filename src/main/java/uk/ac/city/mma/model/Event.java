@@ -7,16 +7,20 @@ public class Event {
     private String eventDate;
     private String location;
     private String status;
+    private String allowedMartialArts;
+    private String format;
 
     public Event() {
     }
 
-    public Event(int eventId, String eventName, String eventDate, String location, String status) {
+    public Event(int eventId, String eventName, String eventDate,
+                 String location, String status, String allowedMartialArts) {
         this.eventId = eventId;
         this.eventName = eventName;
         this.eventDate = eventDate;
         this.location = location;
         this.status = status;
+        this.allowedMartialArts = allowedMartialArts;
     }
 
     public int getEventId() {
@@ -57,5 +61,21 @@ public class Event {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getAllowedMartialArts() {
+        return allowedMartialArts;
+    }
+
+    public void setAllowedMartialArts(String allowedMartialArts) {
+        this.allowedMartialArts = allowedMartialArts;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 }

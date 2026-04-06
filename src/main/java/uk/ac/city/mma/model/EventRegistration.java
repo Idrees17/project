@@ -5,15 +5,21 @@ public class EventRegistration {
     private int registrationId;
     private int eventId;
     private int memberId;
+    private String chosenMartialArt;
+    private String experienceLevel;
     private String registeredAt;
 
     public EventRegistration() {
     }
 
-    public EventRegistration(int registrationId, int eventId, int memberId, String registeredAt) {
+    public EventRegistration(int registrationId, int eventId, int memberId,
+                             String chosenMartialArt, String experienceLevel,
+                             String registeredAt) {
         this.registrationId = registrationId;
         this.eventId = eventId;
         this.memberId = memberId;
+        this.chosenMartialArt = chosenMartialArt;
+        this.experienceLevel = experienceLevel;
         this.registeredAt = registeredAt;
     }
 
@@ -39,6 +45,22 @@ public class EventRegistration {
 
     public void setMemberId(int memberId) {
         this.memberId = memberId;
+    }
+
+    public String getChosenMartialArt() {
+        return chosenMartialArt;
+    }
+
+    public void setChosenMartialArt(String chosenMartialArt) {
+        this.chosenMartialArt = chosenMartialArt;
+    }
+
+    public String getExperienceLevel() {
+        return experienceLevel;
+    }
+
+    public void setExperienceLevel(String experienceLevel) {
+        this.experienceLevel = experienceLevel;
     }
 
     public String getRegisteredAt() {

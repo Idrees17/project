@@ -11,7 +11,7 @@ public class EventRepository {
 
     public void createEvent(Event event) {
 
-        String sql = "INSERT INTO events (event_name, event_date, location, status) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO events (event_name, event_date, location, status, format, allowed_martial_arts) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -20,6 +20,8 @@ public class EventRepository {
             stmt.setString(2, event.getEventDate());
             stmt.setString(3, event.getLocation());
             stmt.setString(4, event.getStatus());
+            stmt.setString(5, event.getFormat());
+            stmt.setString(6, event.getAllowedMartialArts());
 
             stmt.executeUpdate();
 
@@ -44,8 +46,10 @@ public class EventRepository {
                         rs.getString("event_name"),
                         rs.getString("event_date"),
                         rs.getString("location"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("allowed_martial_arts")
                 ));
+                events.get(events.size() - 1).setFormat(rs.getString("format"));
             }
 
         } catch (Exception e) {
@@ -66,13 +70,16 @@ public class EventRepository {
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return new Event(
+                Event event = new Event(
                         rs.getInt("event_id"),
                         rs.getString("event_name"),
                         rs.getString("event_date"),
                         rs.getString("location"),
-                        rs.getString("status")
+                        rs.getString("status"),
+                        rs.getString("allowed_martial_arts")
                 );
+                event.setFormat(rs.getString("format"));
+                return event;
             }
 
         } catch (Exception e) {
@@ -84,7 +91,7 @@ public class EventRepository {
 
     public void updateEvent(Event event) {
 
-        String sql = "UPDATE events SET event_name = ?, event_date = ?, location = ?, status = ? WHERE event_id = ?";
+        String sql = "UPDATE events SET event_name = ?, event_date = ?, location = ?, status = ?, format = ?, allowed_martial_arts = ? WHERE event_id = ?";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -93,7 +100,9 @@ public class EventRepository {
             stmt.setString(2, event.getEventDate());
             stmt.setString(3, event.getLocation());
             stmt.setString(4, event.getStatus());
-            stmt.setInt(5, event.getEventId());
+            stmt.setString(5, event.getFormat());
+            stmt.setString(6, event.getAllowedMartialArts());
+            stmt.setInt(7, event.getEventId());
 
             stmt.executeUpdate();
 

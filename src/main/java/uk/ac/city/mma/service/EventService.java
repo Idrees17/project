@@ -12,12 +12,15 @@ public class EventService {
     private EventRepository eventRepository = new EventRepository();
     private EventRegistrationRepository registrationRepository = new EventRegistrationRepository();
 
-    public void createEvent(String eventName, String eventDate, String location, String status) {
+    public void createEvent(String eventName, String eventDate, String location,
+                            String status, String format, String allowedMartialArts) {
         Event event = new Event();
         event.setEventName(eventName);
         event.setEventDate(eventDate);
         event.setLocation(location);
         event.setStatus(status);
+        event.setFormat(format);
+        event.setAllowedMartialArts(allowedMartialArts);
 
         eventRepository.createEvent(event);
     }
@@ -30,13 +33,16 @@ public class EventService {
         return eventRepository.getEventById(eventId);
     }
 
-    public void updateEvent(int eventId, String eventName, String eventDate, String location, String status) {
+    public void updateEvent(int eventId, String eventName, String eventDate, String location,
+                            String status, String format, String allowedMartialArts) {
         Event event = new Event();
         event.setEventId(eventId);
         event.setEventName(eventName);
         event.setEventDate(eventDate);
         event.setLocation(location);
         event.setStatus(status);
+        event.setFormat(format);
+        event.setAllowedMartialArts(allowedMartialArts);
 
         eventRepository.updateEvent(event);
     }
@@ -46,9 +52,9 @@ public class EventService {
         eventRepository.deleteEvent(eventId);
     }
 
-    public void registerMemberForEvent(int eventId, int memberId) {
+    public void registerMemberForEvent(int eventId, int memberId, String chosenMartialArt, String experienceLevel) {
         if (!registrationRepository.isMemberRegistered(eventId, memberId)) {
-            registrationRepository.registerMember(eventId, memberId);
+            registrationRepository.registerMember(eventId, memberId, chosenMartialArt, experienceLevel);
         }
     }
 

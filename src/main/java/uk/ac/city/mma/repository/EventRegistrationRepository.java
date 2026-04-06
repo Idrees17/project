@@ -1,6 +1,7 @@
 package uk.ac.city.mma.repository;
 
 import uk.ac.city.mma.config.MySQLConnection;
+import uk.ac.city.mma.model.EventRegistration;
 import uk.ac.city.mma.model.MemberProfile;
 
 import java.sql.*;
@@ -9,15 +10,18 @@ import java.util.List;
 
 public class EventRegistrationRepository {
 
-    public void registerMember(int eventId, int memberId) {
+    public void registerMember(int eventId, int memberId, String chosenMartialArt, String experienceLevel) {
 
-        String sql = "INSERT INTO event_registrations (event_id, member_id) VALUES (?, ?)";
+        String sql = "INSERT INTO event_registrations (event_id, member_id, chosen_martial_art, experience_level) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, eventId);
             stmt.setInt(2, memberId);
+            stmt.setString(3, chosenMartialArt);
+            stmt.setString(4, experienceLevel);
+
             stmt.executeUpdate();
 
         } catch (Exception e) {
@@ -71,9 +75,7 @@ public class EventRegistrationRepository {
                         rs.getString("last_name"),
                         rs.getInt("age"),
                         rs.getInt("height_cm"),
-                        rs.getDouble("weight_kg"),
-                        rs.getString("experience_level"),
-                        rs.getString("preferred_martial_art")
+                        rs.getDouble("weight_kg")
                 ));
             }
 
@@ -82,6 +84,36 @@ public class EventRegistrationRepository {
         }
 
         return entrants;
+    }
+
+    public List<EventRegistration> getRegistrationsForEvent(int eventId) {
+
+        List<EventRegistration> registrations = new ArrayList<>();
+
+        String sql = "SELECT * FROM event_registrations WHERE event_id = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, eventId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                registrations.add(new EventRegistration(
+                        rs.getInt("registration_id"),
+                        rs.getInt("event_id"),
+                        rs.getInt("member_id"),
+                        rs.getString("chosen_martial_art"),
+                        rs.getString("experience_level"),
+                        rs.getString("registered_at")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return registrations;
     }
 
     public void deleteRegistrationsForEvent(int eventId) {
