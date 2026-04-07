@@ -1,9 +1,7 @@
 package uk.ac.city.mma.controller;
 
-import uk.ac.city.mma.model.Event;
-import uk.ac.city.mma.model.MemberProfile;
-import uk.ac.city.mma.service.EventService;
-import uk.ac.city.mma.service.MemberService;
+import uk.ac.city.mma.model.*;
+import uk.ac.city.mma.service.*;
 
 import java.util.List;
 
@@ -11,6 +9,8 @@ public class MemberController {
 
     private MemberService memberService = new MemberService();
     private EventService eventService = new EventService();
+    private LiveEventService liveEventService = new LiveEventService();
+    private MatchmakingService matchmakingService = new MatchmakingService();
 
     public String getProfilePage(int userId) {
 
@@ -65,15 +65,18 @@ public class MemberController {
         );
     }
 
-    public String getTournamentsPage(int memberId) {
+    public String getEventsPage(int memberId) {
 
-        List<Event> events = eventService.getAllEvents();
+        List<Event> allEvents = eventService.getAllEvents();
+        List<Integer> registeredEventIds = eventService.getRegisteredEventIdsForMember(memberId);
 
         StringBuilder html = new StringBuilder();
 
         html.append("<html><body>");
-        html.append("<h1>Tournament Registration</h1>");
+        html.append("<h1>Events</h1>");
 
+        // Upcoming events not yet registered
+        html.append("<h2>Upcoming Events</h2>");
         html.append("<table border='1'>");
         html.append("<tr>");
         html.append("<th>Name</th>");
@@ -84,7 +87,11 @@ public class MemberController {
         html.append("<th>Register</th>");
         html.append("</tr>");
 
-        for (Event e : events) {
+        for (Event e : allEvents) {
+            if (registeredEventIds.contains(e.getEventId())) {
+                continue;
+            }
+
             html.append("<tr>");
             html.append("<td>").append(e.getEventName()).append("</td>");
             html.append("<td>").append(e.getEventDate()).append("</td>");
@@ -97,7 +104,7 @@ public class MemberController {
             if (e.getAllowedMartialArts() == null || e.getAllowedMartialArts().isBlank()) {
                 html.append("No martial arts configured");
             } else {
-                html.append("<form method='POST' action='/member/tournaments' style='display:inline;'>");
+                html.append("<form method='POST' action='/member/events'>");
                 html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
 
                 html.append("Martial Art: <select name='chosenMartialArt'>");
@@ -128,17 +135,98 @@ public class MemberController {
 
         html.append("</table>");
 
+        // My events
+        html.append("<h2>My Events</h2>");
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>Name</th>");
+        html.append("<th>Date</th>");
+        html.append("<th>Location</th>");
+        html.append("<th>Status</th>");
+        html.append("<th>View</th>");
+        html.append("</tr>");
+
+        for (Event e : allEvents) {
+            if (!registeredEventIds.contains(e.getEventId())) {
+                continue;
+            }
+
+            html.append("<tr>");
+            html.append("<td>").append(e.getEventName()).append("</td>");
+            html.append("<td>").append(e.getEventDate()).append("</td>");
+            html.append("<td>").append(e.getLocation()).append("</td>");
+            html.append("<td>").append(e.getStatus()).append("</td>");
+            html.append("<td><a href='/member/event-results?eventId=").append(e.getEventId()).append("'>View Event</a></td>");
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
         html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
         html.append("</body></html>");
 
         return html.toString();
     }
 
-    public void registerForTournament(int memberId, int eventId, String chosenMartialArt, String experienceLevel) {
+    public void registerForEvent(int memberId, int eventId, String chosenMartialArt, String experienceLevel) {
         eventService.registerMemberForEvent(eventId, memberId, chosenMartialArt, experienceLevel);
     }
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    public String getMemberEventResultsPage(int eventId) {
+
+        Event event = eventService.getEventById(eventId);
+        LiveEventState state = liveEventService.getStateForEvent(eventId);
+        List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Event Results - ").append(event.getEventName()).append("</h1>");
+
+        html.append("<h2>Live Event State</h2>");
+        html.append("<p><strong>Current Round:</strong> ").append(state.getCurrentRound()).append("</p>");
+        html.append("<p><strong>Timer:</strong> ").append(formatSeconds(state.getRemainingSeconds())).append("</p>");
+        html.append("<p><strong>Status:</strong> ").append(state.isTimerRunning() ? "Round Live" : "Paused / Waiting").append("</p>");
+
+        html.append("<h2>Matches</h2>");
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>Match ID</th>");
+        html.append("<th>Participant 1</th>");
+        html.append("<th>Participant 2</th>");
+        html.append("<th>Status</th>");
+        html.append("<th>Round</th>");
+        html.append("<th>Winner</th>");
+        html.append("<th>Decision</th>");
+        html.append("</tr>");
+
+        for (Match m : matches) {
+            html.append("<tr>");
+            html.append("<td>").append(m.getMatchId()).append("</td>");
+            html.append("<td>").append(m.getParticipant1Name()).append("</td>");
+            html.append("<td>").append(m.getParticipant2Name()).append("</td>");
+            html.append("<td>").append(m.getStatus()).append("</td>");
+            html.append("<td>").append(m.getRoundNumber()).append("</td>");
+            html.append("<td>").append(m.getWinnerName() == null ? "-" : m.getWinnerName()).append("</td>");
+            html.append("<td>").append(m.getResult() == null || m.getResult().isBlank() ? "-" : m.getResult()).append("</td>");
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    private String formatSeconds(int totalSeconds) {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
     }
 }
