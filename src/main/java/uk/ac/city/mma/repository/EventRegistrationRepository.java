@@ -130,4 +130,27 @@ public class EventRegistrationRepository {
             e.printStackTrace();
         }
     }
+
+    public List<Integer> getRegisteredEventIdsForMember(int memberId) {
+
+        List<Integer> eventIds = new ArrayList<>();
+
+        String sql = "SELECT event_id FROM event_registrations WHERE member_id = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, memberId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                eventIds.add(rs.getInt("event_id"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return eventIds;
+    }
 }

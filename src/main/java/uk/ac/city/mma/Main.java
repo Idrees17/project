@@ -30,7 +30,7 @@ public class Main {
         Map<String, User> sessions = new HashMap<>();
 
         /*
-         LOGIN ROUTE
+          ROUTE
         */
         server.createContext("/login", exchange -> {
 
@@ -652,6 +652,181 @@ public class Main {
             exchange.close();
         });
 
+        server.createContext("/admin/event-results", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                String query = exchange.getRequestURI().getQuery();
+                int eventId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getAdminEventResultsPage(eventId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            }
+        });
+
+        server.createContext("/admin/live-control", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                Map<String, String> queryParams = parseFormData(query.replace("&", "&"));
+
+                int eventId = Integer.parseInt(queryParams.get("eventId"));
+                Integer matchId = queryParams.get("matchId") == null ? null : Integer.parseInt(queryParams.get("matchId"));
+
+                String html = adminController.getAdminLiveControlPage(eventId, matchId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            }
+        });
+
+        server.createContext("/admin/live-control/select-match", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+                int matchId = Integer.parseInt(params.get("matchId"));
+
+                adminController.setCurrentMatch(eventId, matchId);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/set-round", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+                int round = Integer.parseInt(params.get("round"));
+
+                adminController.setCurrentRound(eventId, round);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/set-round-time", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+                int roundTimeSeconds = Integer.parseInt(params.get("roundTimeSeconds"));
+
+                adminController.setRoundTime(eventId, roundTimeSeconds);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/start", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.startLiveTimer(eventId);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/pause", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.pauseLiveTimer(eventId);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/reset", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.resetLiveTimer(eventId);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/tick", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.tickLiveTimer(eventId);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/result", exchange -> {
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+                int matchId = Integer.parseInt(params.get("matchId"));
+                String status = params.get("status");
+                String result = params.get("result");
+                String winnerValue = params.get("winnerMemberId");
+                Integer winnerMemberId = (winnerValue == null || winnerValue.isBlank()) ? null : Integer.parseInt(winnerValue);
+                int roundNumber = Integer.parseInt(params.get("roundNumber"));
+
+                adminController.saveMatchResult(matchId, status, result, winnerMemberId, roundNumber);
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+            exchange.close();
+        });
+
+        server.createContext("/admin/start-event", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.startEvent(eventId);
+
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/live-control/tick-and-return", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                String query = exchange.getRequestURI().getQuery();
+                Map<String, String> params = parseFormData(query);
+
+                int eventId = Integer.parseInt(params.get("eventId"));
+
+                adminController.tickLiveTimer(eventId);
+
+                redirect(exchange, "/admin/live-control?eventId=" + eventId);
+            }
+
+            exchange.close();
+        });
+
 
         /*
          MEMBER DASHBOARD ROUTES
@@ -663,7 +838,7 @@ public class Main {
         server.createContext("/member/memberships", e ->
                 serveHtml(e, "member-memberships.html"));
 
-        server.createContext("/member/tournaments", exchange -> {
+        server.createContext("/member/events", exchange -> {
 
             User currentUser = getLoggedInUser(exchange, sessions);
 
@@ -690,7 +865,7 @@ public class Main {
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
 
-                String html = memberController.getTournamentsPage(profile.getMemberId());
+                String html = memberController.getEventsPage(profile.getMemberId());
 
                 byte[] response = html.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
@@ -705,17 +880,32 @@ public class Main {
                 String body = new String(exchange.getRequestBody().readAllBytes());
                 Map<String, String> params = parseFormData(body);
 
-                memberController.registerForTournament(
+                memberController.registerForEvent(
                         profile.getMemberId(),
                         Integer.parseInt(params.get("eventId")),
                         params.get("chosenMartialArt"),
                         params.get("experienceLevel")
                 );
 
-                redirect(exchange, "/member/tournaments");
+                redirect(exchange, "/member/events");
             }
 
             exchange.close();
+        });
+
+        server.createContext("/member/event-results", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                String query = exchange.getRequestURI().getQuery();
+                int eventId = Integer.parseInt(query.split("=")[1]);
+
+                String html = memberController.getMemberEventResultsPage(eventId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            }
         });
 
         /*

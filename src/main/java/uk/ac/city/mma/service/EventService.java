@@ -61,4 +61,8 @@ public class EventService {
     public List<MemberProfile> getEntrantsForEvent(int eventId) {
         return registrationRepository.getEntrantsForEvent(eventId);
     }
+
+    public List<Integer> getRegisteredEventIdsForMember(int memberId) {
+        return registrationRepository.getRegisteredEventIdsForMember(memberId);
+    }
 }

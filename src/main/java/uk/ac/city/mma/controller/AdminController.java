@@ -15,7 +15,7 @@ public class AdminController {
     private MemberService memberService = new MemberService();
     private EventService eventService = new EventService();
     private MatchmakingService matchmakingService = new MatchmakingService();
-
+    private LiveEventService liveEventService = new LiveEventService();
 
 
     public String getClassesPage() {
@@ -729,7 +729,7 @@ public class AdminController {
         StringBuilder html = new StringBuilder();
 
         html.append("<html><body>");
-        html.append("<h1>Manage Tournament</h1>");
+        html.append("<h1>Manage Events</h1>");
 
         html.append("<h2>Create Event</h2>");
         html.append("<form method='POST' action='/admin/tournaments'>");
@@ -741,13 +741,12 @@ public class AdminController {
         html.append("Status: <select name='status'>");
         html.append("<option value='Upcoming'>Upcoming</option>");
         html.append("<option value='Open'>Open</option>");
-        html.append("<option value='Closed'>Closed</option>");
+        html.append("<option value='Live'>Live</option>");
         html.append("<option value='Completed'>Completed</option>");
         html.append("</select><br>");
 
         html.append("Format: <select name='format'>");
         html.append("<option value='MATCHES'>Matches</option>");
-        html.append("<option value='BRACKET'>Bracket</option>");
         html.append("</select><br>");
 
         html.append("<p>Allowed Martial Arts:</p>");
@@ -797,8 +796,16 @@ public class AdminController {
 
             html.append("<td>");
             html.append("<a href='/admin/edit-tournament?eventId=").append(e.getEventId()).append("'>Edit</a> ");
-            html.append("<a href='/admin/view-entrants?eventId=").append(e.getEventId()).append("'>View Entrants</a> ");
-            html.append("<a href='/admin/view-matches?eventId=").append(e.getEventId()).append("'>View Matches</a> ");
+            html.append("<a href='/admin/view-entrants?eventId=").append(e.getEventId()).append("'>Entrants</a> ");
+            html.append("<a href='/admin/view-matches?eventId=").append(e.getEventId()).append("'>Matches</a> ");
+            html.append("<a href='/admin/event-results?eventId=").append(e.getEventId()).append("'>Live Results</a> ");
+            html.append("<a href='/admin/live-control?eventId=").append(e.getEventId()).append("'>Live Controls</a> ");
+
+            html.append("<form method='POST' action='/admin/start-event' style='display:inline;'>");
+            html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
+            html.append("<button type='submit'>Start Event</button>");
+            html.append("</form> ");
+
 
             html.append("<form method='POST' action='/admin/delete-tournament' style='display:inline;'>");
             html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
@@ -982,6 +989,235 @@ public class AdminController {
         html.append("</body></html>");
 
         return html.toString();
+    }
+
+    public String getAdminEventResultsPage(int eventId) {
+
+        Event event = eventService.getEventById(eventId);
+        List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Event Results - ").append(event.getEventName()).append("</h1>");
+
+        html.append("<h2>Matches</h2>");
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>Match ID</th>");
+        html.append("<th>Participant 1</th>");
+        html.append("<th>Participant 2</th>");
+        html.append("<th>Status</th>");
+        html.append("<th>Round</th>");
+        html.append("<th>Winner</th>");
+        html.append("<th>Decision</th>");
+        html.append("<th>Actions</th>");
+        html.append("</tr>");
+
+        for (Match m : matches) {
+            html.append("<tr>");
+            html.append("<td>").append(m.getMatchId()).append("</td>");
+            html.append("<td>").append(m.getParticipant1Name()).append("</td>");
+            html.append("<td>").append(m.getParticipant2Name()).append("</td>");
+            html.append("<td>").append(m.getStatus()).append("</td>");
+            html.append("<td>").append(m.getRoundNumber()).append("</td>");
+            html.append("<td>").append(m.getWinnerName() == null ? "-" : m.getWinnerName()).append("</td>");
+            html.append("<td>").append(m.getResult() == null || m.getResult().isBlank() ? "-" : m.getResult()).append("</td>");
+
+            html.append("<td>");
+            html.append("<a href='/admin/live-control?eventId=").append(eventId).append("&matchId=").append(m.getMatchId()).append("'>Control</a>");
+            html.append("</td>");
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public String getAdminLiveControlPage(int eventId, Integer selectedMatchId) {
+
+        Event event = eventService.getEventById(eventId);
+        LiveEventState state = liveEventService.getStateForEvent(eventId);
+        List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
+
+        if (selectedMatchId != null) {
+            liveEventService.setCurrentMatch(eventId, selectedMatchId);
+            state = liveEventService.getStateForEvent(eventId);
+        }
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Live Control - ").append(event.getEventName()).append("</h1>");
+
+        if (state.isTimerRunning()) {
+            html.append("<meta http-equiv='refresh' content='1;url=/admin/live-control/tick-and-return?eventId=")
+                    .append(eventId)
+                    .append("'>");
+        }
+
+        html.append("<p><strong>Current Round:</strong> ").append(state.getCurrentRound()).append("</p>");
+        html.append("<p><strong>Timer:</strong> ").append(formatSeconds(state.getRemainingSeconds())).append("</p>");
+        html.append("<p><strong>Running:</strong> ").append(state.isTimerRunning() ? "Yes" : "No").append("</p>");
+
+        html.append("<h2>Select Current Match</h2>");
+        html.append("<form method='POST' action='/admin/live-control/select-match'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("<select name='matchId'>");
+
+        for (Match m : matches) {
+            html.append("<option value='").append(m.getMatchId()).append("'");
+            if (state.getCurrentMatchId() != null && state.getCurrentMatchId() == m.getMatchId()) {
+                html.append(" selected");
+            }
+            html.append(">");
+            html.append("Match ").append(m.getMatchId()).append(": ")
+                    .append(m.getParticipant1Name()).append(" vs ")
+                    .append(m.getParticipant2Name());
+            html.append("</option>");
+        }
+
+        html.append("</select>");
+        html.append("<button type='submit'>Set Current Match</button>");
+        html.append("</form>");
+
+        html.append("<h2>Round / Timer Controls</h2>");
+
+        html.append("<form method='POST' action='/admin/live-control/set-round'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("Round: <input type='number' name='round' value='").append(state.getCurrentRound()).append("'>");
+        html.append("<button type='submit'>Update Round</button>");
+        html.append("</form><br>");
+
+        html.append("<form method='POST' action='/admin/live-control/set-round-time'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("Round Time (seconds): <input type='number' name='roundTimeSeconds' value='").append(state.getRoundTimeSeconds()).append("'>");
+        html.append("<button type='submit'>Set Round Time</button>");
+        html.append("</form><br>");
+
+        html.append("<form method='POST' action='/admin/live-control/start' style='display:inline;'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("<button type='submit'>Start</button>");
+        html.append("</form> ");
+
+        html.append("<form method='POST' action='/admin/live-control/pause' style='display:inline;'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("<button type='submit'>Pause</button>");
+        html.append("</form> ");
+
+        html.append("<form method='POST' action='/admin/live-control/reset' style='display:inline;'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("<button type='submit'>Reset</button>");
+        html.append("</form> ");
+
+        html.append("<form method='POST' action='/admin/live-control/tick' style='display:inline;'>");
+        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+        html.append("<button type='submit'>Tick -1s</button>");
+        html.append("</form>");
+
+        if (state.getCurrentMatchId() != null) {
+            Match currentMatch = null;
+            for (Match m : matches) {
+                if (m.getMatchId() == state.getCurrentMatchId()) {
+                    currentMatch = m;
+                    break;
+                }
+            }
+
+            if (currentMatch != null) {
+                html.append("<h2>Result Entry</h2>");
+                html.append("<form method='POST' action='/admin/live-control/result'>");
+                html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
+                html.append("<input type='hidden' name='matchId' value='").append(currentMatch.getMatchId()).append("'>");
+
+                html.append("Status: <select name='status'>");
+                html.append("<option value='Scheduled'>Scheduled</option>");
+                html.append("<option value='Live'>Live</option>");
+                html.append("<option value='Completed'>Completed</option>");
+                html.append("</select><br>");
+
+                html.append("Winner: <select name='winnerMemberId'>");
+                html.append("<option value=''>No winner / Draw</option>");
+                html.append("<option value='").append(currentMatch.getParticipant1Id()).append("'>").append(currentMatch.getParticipant1Name()).append("</option>");
+                html.append("<option value='").append(currentMatch.getParticipant2Id()).append("'>").append(currentMatch.getParticipant2Name()).append("</option>");
+                html.append("</select><br>");
+
+                html.append("Decision: <select name='result'>");
+                html.append("<option value='Decision'>Decision</option>");
+                html.append("<option value='KO/TKO'>KO/TKO</option>");
+                html.append("<option value='Submission'>Submission</option>");
+                html.append("<option value='Draw'>Draw</option>");
+                html.append("</select><br>");
+
+                html.append("Round Number: <input type='number' name='roundNumber' value='").append(state.getCurrentRound()).append("'><br>");
+
+                html.append("<button type='submit'>Save Result</button>");
+                html.append("</form>");
+            }
+        }
+
+        html.append("<br><button onclick=\"location.href='/admin/event-results?eventId=").append(eventId).append("'\">Back to Results</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    private String formatSeconds(int totalSeconds) {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
+    public void setCurrentMatch(int eventId, int matchId) {
+        liveEventService.setCurrentMatch(eventId, matchId);
+    }
+
+    public void setCurrentRound(int eventId, int round) {
+        liveEventService.setRound(eventId, round);
+    }
+
+    public void setRoundTime(int eventId, int roundTimeSeconds) {
+        liveEventService.setRoundTime(eventId, roundTimeSeconds);
+    }
+
+    public void startLiveTimer(int eventId) {
+        liveEventService.startTimer(eventId);
+    }
+
+    public void pauseLiveTimer(int eventId) {
+        liveEventService.pauseTimer(eventId);
+    }
+
+    public void resetLiveTimer(int eventId) {
+        liveEventService.resetTimer(eventId);
+    }
+
+    public void tickLiveTimer(int eventId) {
+        liveEventService.tickTimer(eventId);
+    }
+
+    public void saveMatchResult(int matchId, String status, String result, Integer winnerMemberId, int roundNumber) {
+        liveEventService.updateMatchResult(matchId, status, result, winnerMemberId, roundNumber);
+    }
+
+    public void startEvent(int eventId) {
+        Event event = eventService.getEventById(eventId);
+
+        if (event != null) {
+            eventService.updateEvent(
+                    eventId,
+                    event.getEventName(),
+                    event.getEventDate(),
+                    event.getLocation(),
+                    "Live",
+                    event.getFormat(),
+                    event.getAllowedMartialArts()
+            );
+        }
     }
 
     private String escapeForJs(String input) {

@@ -11,6 +11,8 @@ public class Match {
     private String status;
     private String result;
     private int roundNumber;
+    private Integer winnerMemberId;
+    private String winnerName;
 
     public Match() {
     }
@@ -96,5 +98,20 @@ public class Match {
 
     public void setRoundNumber(int roundNumber) {
         this.roundNumber = roundNumber;
+    }
+    public Integer getWinnerMemberId() {
+        return winnerMemberId;
+    }
+
+    public void setWinnerMemberId(Integer winnerMemberId) {
+        this.winnerMemberId = winnerMemberId;
+    }
+
+    public String getWinnerName() {
+        return winnerName;
+    }
+
+    public void setWinnerName(String winnerName) {
+        this.winnerName = winnerName;
     }
 }
