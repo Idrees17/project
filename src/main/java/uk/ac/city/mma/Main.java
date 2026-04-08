@@ -912,12 +912,99 @@ public class Main {
             exchange.close();
         });
 
+        /*
+         ADMIN TIMETABLE CONTROLS
+        */
 
-        server.createContext("/member/timetable", e ->
-                serveHtml(e, "member-timetable.html"));
+        server.createContext("/member/timetable", exchange -> {
+
+            User currentUser = getLoggedInUser(exchange, sessions);
+
+            if (currentUser == null || currentUser.getRole() != User.Role.MEMBER) {
+                redirect(exchange, "/login");
+                exchange.close();
+                return;
+            }
+
+            MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
+
+            if (profile == null) {
+                String html = "<html><body>" +
+                        "<h1>Please complete your profile first.</h1>" +
+                        "<button onclick=\"location.href='/member/profile'\">Go to My Profile</button>" +
+                        "</body></html>";
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+                return;
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String html = memberController.getTimetablePage(profile.getMemberId());
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                memberController.registerForSession(
+                        profile.getMemberId(),
+                        Integer.parseInt(params.get("sessionId"))
+                );
+
+                redirect(exchange, "/member/timetable");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/member/timetable/unregister", exchange -> {
+
+            User currentUser = getLoggedInUser(exchange, sessions);
+
+            if (currentUser == null || currentUser.getRole() != User.Role.MEMBER) {
+                redirect(exchange, "/login");
+                exchange.close();
+                return;
+            }
+
+            MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
+
+            if (profile == null) {
+                redirect(exchange, "/member/profile");
+                exchange.close();
+                return;
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                memberController.unregisterFromSession(
+                        profile.getMemberId(),
+                        Integer.parseInt(params.get("sessionId"))
+                );
+
+                redirect(exchange, "/member/timetable");
+            }
+
+            exchange.close();
+        });
 
         /*
-         MEMBER EVENT CONTROLS
+         ADMIN EVENTS CONTROLS
         */
 
         server.createContext("/member/events", exchange -> {
