@@ -12,6 +12,8 @@ public class MemberController {
     private LiveEventService liveEventService = new LiveEventService();
     private MatchmakingService matchmakingService = new MatchmakingService();
     private MembershipService membershipService = new MembershipService();
+    private ClassSessionService classSessionService = new ClassSessionService();
+    private ClassSessionRegistrationService sessionRegistrationService = new ClassSessionRegistrationService();
 
     public String getProfilePage(int userId) {
 
@@ -66,6 +68,141 @@ public class MemberController {
         );
     }
 
+    public String getTimetablePage(int memberId) {
+
+        List<ClassSession> sessions = classSessionService.getAllSessions();
+        List<Integer> registeredSessionIds = sessionRegistrationService.getRegisteredSessionIdsForMember(memberId);
+        Membership membership = membershipService.getMembershipForMember(memberId);
+
+        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Weekly Timetable</h1>");
+
+        if (membership == null) {
+            html.append("<p style='color:red;'><strong>You do not have a membership. ")
+                    .append("Please select a membership before registering for classes.</strong></p>");
+            html.append("<button onclick=\"location.href='/member/memberships'\">Choose Membership</button><br><br>");
+        } else {
+            html.append("<p><strong>Your Membership:</strong> ").append(membership.getMembershipName()).append("</p>");
+        }
+
+        for (String day : days) {
+
+            boolean hasSessions = false;
+            for (ClassSession s : sessions) {
+                if (s.getDayOfWeek().equalsIgnoreCase(day)) {
+                    hasSessions = true;
+                    break;
+                }
+            }
+
+            if (!hasSessions) {
+                continue;
+            }
+
+            html.append("<h2>").append(day).append("</h2>");
+            html.append("<table border='1'>");
+            html.append("<tr>");
+            html.append("<th>Class</th>");
+            html.append("<th>Skill Level</th>");
+            html.append("<th>Start Time</th>");
+            html.append("<th>Duration</th>");
+            html.append("<th>Coach</th>");
+            html.append("<th>Room</th>");
+            html.append("<th>Spots Taken</th>");
+            html.append("<th>Action</th>");
+            html.append("</tr>");
+
+            for (ClassSession s : sessions) {
+
+                if (!s.getDayOfWeek().equalsIgnoreCase(day)) {
+                    continue;
+                }
+
+                boolean alreadyRegistered = registeredSessionIds.contains(s.getSessionId());
+                int spotsTaken = sessionRegistrationService.getRegistrationCount(s.getSessionId());
+                boolean allowed = membership != null && isMembershipCompatible(membership, s);
+
+                html.append("<tr>");
+                html.append("<td>").append(s.getClassName()).append("</td>");
+                html.append("<td>").append(s.getSkillLevel()).append("</td>");
+                html.append("<td>").append(s.getStartTime()).append("</td>");
+                html.append("<td>").append(s.getDurationMinutes()).append(" mins</td>");
+                html.append("<td>").append(s.getCoachName()).append("</td>");
+                html.append("<td>").append(s.getRoom()).append("</td>");
+                html.append("<td>").append(spotsTaken).append("</td>");
+
+                html.append("<td>");
+                if (alreadyRegistered) {
+                    html.append("<form method='POST' action='/member/timetable/unregister'>");
+                    html.append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>");
+                    html.append("<button type='submit'>Unregister</button>");
+                    html.append("</form>");
+                } else if (!allowed) {
+                    html.append("<span style='color:grey;'>Not in your membership</span>");
+                } else {
+                    html.append("<form method='POST' action='/member/timetable'>");
+                    html.append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>");
+                    html.append("<button type='submit'>Register</button>");
+                    html.append("</form>");
+                }
+                html.append("</td>");
+
+                html.append("</tr>");
+            }
+
+            html.append("</table><br>");
+        }
+
+        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    private boolean isMembershipCompatible(Membership membership, ClassSession session) {
+
+        String allowedSkills = membership.getAllowedSkillLevels();
+        String allowedArts   = membership.getAllowedMartialArts();
+
+        // Check skill level
+        if (allowedSkills != null && !allowedSkills.isBlank()) {
+            boolean skillMatch = false;
+            for (String s : allowedSkills.split(",")) {
+                if (s.trim().equalsIgnoreCase(session.getSkillLevel())) {
+                    skillMatch = true;
+                    break;
+                }
+            }
+            if (!skillMatch) return false;
+        }
+
+        if (allowedArts != null && !allowedArts.isBlank()) {
+            boolean artMatch = false;
+            for (String a : allowedArts.split(",")) {
+                if (a.trim().equalsIgnoreCase(session.getClassName())) {
+                    artMatch = true;
+                    break;
+                }
+            }
+            if (!artMatch) return false;
+        }
+
+        return true;
+    }
+
+    public void registerForSession(int memberId, int sessionId) {
+        sessionRegistrationService.registerMemberForSession(sessionId, memberId);
+    }
+
+    public void unregisterFromSession(int memberId, int sessionId) {
+        sessionRegistrationService.unregisterMemberFromSession(sessionId, memberId);
+    }
+
+
     public String getEventsPage(int memberId) {
 
         List<Event> allEvents = eventService.getAllEvents();
@@ -76,7 +213,6 @@ public class MemberController {
         html.append("<html><body>");
         html.append("<h1>Events</h1>");
 
-        // Upcoming events not yet registered
         html.append("<h2>Upcoming Events</h2>");
         html.append("<table border='1'>");
         html.append("<tr>");
@@ -136,7 +272,6 @@ public class MemberController {
 
         html.append("</table>");
 
-        // My events
         html.append("<h2>My Events</h2>");
         html.append("<table border='1'>");
         html.append("<tr>");
@@ -284,5 +419,4 @@ public class MemberController {
     public void chooseMembership(int memberId, int membershipId) {
         membershipService.assignMembershipToMember(memberId, membershipId);
     }
-
 }
