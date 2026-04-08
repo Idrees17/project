@@ -16,6 +16,7 @@ public class AdminController {
     private EventService eventService = new EventService();
     private MatchmakingService matchmakingService = new MatchmakingService();
     private LiveEventService liveEventService = new LiveEventService();
+    private MembershipService membershipService = new MembershipService();
 
 
     public String getClassesPage() {
@@ -1226,6 +1227,200 @@ public class AdminController {
                 .replace("`", "\\`")
                 .replace("\n", "")
                 .replace("\r", "");
+    }
+
+    public String getMembershipsPage() {
+
+        List<Membership> memberships = membershipService.getAllMemberships();
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Manage Memberships</h1>");
+
+        html.append("<h2>Create Membership</h2>");
+        html.append("<form method='POST' action='/admin/memberships'>");
+
+        html.append("Membership Name: <input name='membershipName'><br>");
+        html.append("Description: <input name='description'><br>");
+
+        html.append("<p>Allowed Martial Arts:</p>");
+        html.append("<select id='allowedMartialArtsSelect' multiple size='6' onchange='updateMembershipSelections()'>");
+        html.append("<option value='MMA'>MMA</option>");
+        html.append("<option value='Boxing'>Boxing</option>");
+        html.append("<option value='Kickboxing'>Kickboxing</option>");
+        html.append("<option value='Muay Thai'>Muay Thai</option>");
+        html.append("<option value='Jiu Jitsu'>Jiu Jitsu</option>");
+        html.append("<option value='Wrestling'>Wrestling</option>");
+        html.append("</select><br>");
+
+        html.append("<p>Allowed Skill Levels:</p>");
+        html.append("<select id='allowedSkillLevelsSelect' multiple size='3' onchange='updateMembershipSelections()'>");
+        html.append("<option value='Beginner'>Beginner</option>");
+        html.append("<option value='Intermediate/Advanced'>Intermediate/Advanced</option>");
+        html.append("</select><br>");
+
+        html.append("<input type='hidden' id='allowedMartialArts' name='allowedMartialArts'>");
+        html.append("<input type='hidden' id='allowedSkillLevels' name='allowedSkillLevels'>");
+
+        html.append("<button type='submit'>Create Membership</button>");
+        html.append("</form><br>");
+
+        html.append("<script>");
+        html.append("function updateMembershipSelections(){");
+
+        html.append("  const artsSelect = document.getElementById('allowedMartialArtsSelect');");
+        html.append("  const selectedArts = Array.from(artsSelect.selectedOptions).map(o => o.value);");
+        html.append("  document.getElementById('allowedMartialArts').value = selectedArts.join(',');");
+
+        html.append("  const skillsSelect = document.getElementById('allowedSkillLevelsSelect');");
+        html.append("  const selectedSkills = Array.from(skillsSelect.selectedOptions).map(o => o.value);");
+        html.append("  document.getElementById('allowedSkillLevels').value = selectedSkills.join(',');");
+
+        html.append("}");
+        html.append("</script>");
+
+        html.append("<h2>Existing Memberships</h2>");
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>ID</th>");
+        html.append("<th>Name</th>");
+        html.append("<th>Description</th>");
+        html.append("<th>Allowed Martial Arts</th>");
+        html.append("<th>Allowed Skill Levels</th>");
+        html.append("<th>Actions</th>");
+        html.append("</tr>");
+
+        for (Membership m : memberships) {
+            html.append("<tr>");
+            html.append("<td>").append(m.getMembershipId()).append("</td>");
+            html.append("<td>").append(m.getMembershipName()).append("</td>");
+            html.append("<td>").append(m.getDescription()).append("</td>");
+            html.append("<td>").append(m.getAllowedMartialArts()).append("</td>");
+            html.append("<td>").append(m.getAllowedSkillLevels()).append("</td>");
+
+            html.append("<td>");
+            html.append("<a href='/admin/edit-membership?membershipId=").append(m.getMembershipId()).append("'>Edit</a> ");
+
+            html.append("<form method='POST' action='/admin/delete-membership' style='display:inline;'>");
+            html.append("<input type='hidden' name='membershipId' value='").append(m.getMembershipId()).append("'>");
+            html.append("<button type='submit'>Delete</button>");
+            html.append("</form>");
+            html.append("</td>");
+
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void createMembership(String membershipName, String description,
+                                 String allowedMartialArts, String allowedSkillLevels) {
+        membershipService.createMembership(membershipName, description, allowedMartialArts, allowedSkillLevels);
+    }
+
+    public void deleteMembership(int membershipId) {
+        membershipService.deleteMembership(membershipId);
+    }
+
+    public String getEditMembershipPage(int membershipId) {
+
+        Membership membership = membershipService.getMembershipById(membershipId);
+
+        String allowedArts = membership.getAllowedMartialArts() == null ? "" : membership.getAllowedMartialArts();
+        String allowedSkills = membership.getAllowedSkillLevels() == null ? "" : membership.getAllowedSkillLevels();
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Edit Membership</h1>");
+
+        html.append("<form method='POST' action='/admin/edit-membership'>");
+        html.append("<input type='hidden' name='membershipId' value='").append(membership.getMembershipId()).append("'>");
+
+        html.append("Membership Name: <input name='membershipName' value='").append(membership.getMembershipName()).append("'><br>");
+        html.append("Description: <input name='description' value='").append(membership.getDescription()).append("'><br>");
+
+        html.append("<p>Allowed Martial Arts:</p>");
+        html.append("<select id='allowedMartialArtsSelect' multiple size='6' onchange='updateMembershipSelections()'>");
+
+        appendSelectedOption(html, "MMA", allowedArts);
+        appendSelectedOption(html, "Boxing", allowedArts);
+        appendSelectedOption(html, "Kickboxing", allowedArts);
+        appendSelectedOption(html, "Muay Thai", allowedArts);
+        appendSelectedOption(html, "Jiu Jitsu", allowedArts);
+        appendSelectedOption(html, "Wrestling", allowedArts);
+
+        html.append("</select><br>");
+
+        html.append("<p>Allowed Skill Levels:</p>");
+        html.append("<select id='allowedSkillLevelsSelect' multiple size='2' onchange='updateMembershipSelections()'>");
+
+        appendSelectedOption(html, "Beginner", allowedSkills);
+        appendSelectedOption(html, "Intermediate/Advanced", allowedSkills);
+
+        html.append("</select><br>");
+
+        html.append("<input type='hidden' id='allowedMartialArts' name='allowedMartialArts' value='").append(allowedArts).append("'>");
+        html.append("<input type='hidden' id='allowedSkillLevels' name='allowedSkillLevels' value='").append(allowedSkills).append("'>");
+
+        html.append("<button type='submit'>Update Membership</button>");
+        html.append("</form>");
+
+        html.append("<script>");
+        html.append("function updateMembershipSelections(){");
+
+        html.append("  const artsSelect = document.getElementById('allowedMartialArtsSelect');");
+        html.append("  const selectedArts = Array.from(artsSelect.selectedOptions).map(o => o.value);");
+        html.append("  document.getElementById('allowedMartialArts').value = selectedArts.join(',');");
+
+        html.append("  const skillsSelect = document.getElementById('allowedSkillLevelsSelect');");
+        html.append("  const selectedSkills = Array.from(skillsSelect.selectedOptions).map(o => o.value);");
+        html.append("  document.getElementById('allowedSkillLevels').value = selectedSkills.join(',');");
+
+        html.append("}");
+        html.append("</script>");
+
+        html.append("<br><button onclick=\"location.href='/admin/memberships'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void updateMembership(int membershipId, String membershipName, String description,
+                                 String allowedMartialArts, String allowedSkillLevels) {
+        membershipService.updateMembership(membershipId, membershipName, description, allowedMartialArts, allowedSkillLevels);
+    }
+
+    private void appendSelectedOption(StringBuilder html, String value, String csvValues) {
+        html.append("<option value='").append(value).append("'");
+
+        if (containsCsvValue(csvValues, value)) {
+            html.append(" selected");
+        }
+
+        html.append(">").append(value).append("</option>");
+    }
+
+    private boolean containsCsvValue(String csv, String value) {
+        if (csv == null || csv.isBlank()) {
+            return false;
+        }
+
+        String[] parts = csv.split(",");
+
+        for (String part : parts) {
+            if (part.trim().equalsIgnoreCase(value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

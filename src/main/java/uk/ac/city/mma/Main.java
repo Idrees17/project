@@ -89,7 +89,7 @@ public class Main {
 
 
         /*
-         ADMIN CLASSES PAGE (DYNAMIC)
+         ADMIN CLASSES PAGE
         */
 
         server.createContext("/admin/classes", exchange -> {
@@ -143,7 +143,7 @@ public class Main {
 
 
         /*
-         TIMETABLE ADMIN PAGES
+         ADMIN TIMETABLE PAGES
         */
 
         server.createContext("/admin/timetable", exchange -> {
@@ -827,16 +827,98 @@ public class Main {
             exchange.close();
         });
 
-
         /*
-         MEMBER DASHBOARD ROUTES
+         ADMIN MEMBERSHIP CONTROLS
         */
+
+
+        server.createContext("/admin/memberships", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                String html = adminController.getMembershipsPage();
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.createMembership(
+                        params.get("membershipName"),
+                        params.get("description"),
+                        params.get("allowedMartialArts"),
+                        params.get("allowedSkillLevels")
+                );
+
+                redirect(exchange, "/admin/memberships");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/delete-membership", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.deleteMembership(
+                        Integer.parseInt(params.get("membershipId"))
+                );
+
+                redirect(exchange, "/admin/memberships");
+            }
+
+            exchange.close();
+        });
+
+        server.createContext("/admin/edit-membership", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                String query = exchange.getRequestURI().getQuery();
+                int membershipId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getEditMembershipPage(membershipId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                adminController.updateMembership(
+                        Integer.parseInt(params.get("membershipId")),
+                        params.get("membershipName"),
+                        params.get("description"),
+                        params.get("allowedMartialArts"),
+                        params.get("allowedSkillLevels")
+                );
+
+                redirect(exchange, "/admin/memberships");
+            }
+
+            exchange.close();
+        });
+
 
         server.createContext("/member/timetable", e ->
                 serveHtml(e, "member-timetable.html"));
 
-        server.createContext("/member/memberships", e ->
-                serveHtml(e, "member-memberships.html"));
+        /*
+         MEMBER EVENT CONTROLS
+        */
 
         server.createContext("/member/events", exchange -> {
 
@@ -909,7 +991,7 @@ public class Main {
         });
 
         /*
-         MEMBER PROFILE
+         MEMBER PROFILE CONTROLS
         */
 
         server.createContext("/member/profile", exchange -> {
@@ -956,13 +1038,66 @@ public class Main {
             exchange.close();
         });
 
+        /*
+         MEMBER MEMBERSHIP CONTROLS
+        */
+
+        server.createContext("/member/memberships", exchange -> {
+
+            User currentUser = getLoggedInUser(exchange, sessions);
+
+            if (currentUser == null || currentUser.getRole() != User.Role.MEMBER) {
+                redirect(exchange, "/login");
+                exchange.close();
+                return;
+            }
+
+            MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
+
+            if (profile == null) {
+                String html = "<html><body>" +
+                        "<h1>Please complete your profile first.</h1>" +
+                        "<button onclick=\"location.href='/member/profile'\">Go to My Profile</button>" +
+                        "</body></html>";
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+                return;
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+                String html = memberController.getMembershipsPage(profile.getMemberId());
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+
+                OutputStream os = exchange.getResponseBody();
+                os.write(response);
+                os.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                memberController.chooseMembership(
+                        profile.getMemberId(),
+                        Integer.parseInt(params.get("membershipId"))
+                );
+
+                redirect(exchange, "/member/memberships");
+            }
+
+            exchange.close();
+        });
+
 
         server.start();
         System.out.println("Server running at http://localhost:8080/login");
 
     }
-
-
 
 
     /*

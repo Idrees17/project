@@ -11,6 +11,7 @@ public class MemberController {
     private EventService eventService = new EventService();
     private LiveEventService liveEventService = new LiveEventService();
     private MatchmakingService matchmakingService = new MatchmakingService();
+    private MembershipService membershipService = new MembershipService();
 
     public String getProfilePage(int userId) {
 
@@ -229,4 +230,59 @@ public class MemberController {
         int seconds = totalSeconds % 60;
         return String.format("%02d:%02d", minutes, seconds);
     }
+
+    public String getMembershipsPage(int memberId) {
+
+        List<Membership> memberships = membershipService.getAllMemberships();
+        Membership currentMembership = membershipService.getMembershipForMember(memberId);
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<html><body>");
+        html.append("<h1>Memberships</h1>");
+
+        if (currentMembership != null) {
+            html.append("<p><strong>Current Membership:</strong> ")
+                    .append(currentMembership.getMembershipName())
+                    .append("</p><br>");
+        }
+
+        html.append("<table border='1'>");
+        html.append("<tr>");
+        html.append("<th>Name</th>");
+        html.append("<th>Description</th>");
+        html.append("<th>Allowed Martial Arts</th>");
+        html.append("<th>Allowed Skill Levels</th>");
+        html.append("<th>Action</th>");
+        html.append("</tr>");
+
+        for (Membership m : memberships) {
+            html.append("<tr>");
+            html.append("<td>").append(m.getMembershipName()).append("</td>");
+            html.append("<td>").append(m.getDescription()).append("</td>");
+            html.append("<td>").append(m.getAllowedMartialArts()).append("</td>");
+            html.append("<td>").append(m.getAllowedSkillLevels()).append("</td>");
+
+            html.append("<td>");
+            html.append("<form method='POST' action='/member/memberships'>");
+            html.append("<input type='hidden' name='membershipId' value='").append(m.getMembershipId()).append("'>");
+            html.append("<button type='submit'>Select Membership</button>");
+            html.append("</form>");
+            html.append("</td>");
+
+            html.append("</tr>");
+        }
+
+        html.append("</table>");
+
+        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    public void chooseMembership(int memberId, int membershipId) {
+        membershipService.assignMembershipToMember(memberId, membershipId);
+    }
+
 }
