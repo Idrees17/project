@@ -1,0 +1,41 @@
+<div class="page-header">
+    <h2><i class="bi bi-plus-circle me-2"></i>Add Session</h2>
+</div>
+
+<div class="card" style="max-width:620px">
+    <div class="card-body">
+        <form method="POST" action="/admin/add-session" class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Class</label>
+                <select class="form-select" name="classId">{{OPTIONS_CLASSES}}</select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Day</label>
+                <select class="form-select" name="day">
+                    <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                    <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Start Time</label>
+                <input type="time" class="form-control" name="time">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Duration (minutes)</label>
+                <input type="number" class="form-control" min="30" step="30" name="durationMinutes">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Coach</label>
+                <select class="form-select" name="coachName">{{OPTIONS_COACHES}}</select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Room</label>
+                <select class="form-select" name="roomName">{{OPTIONS_ROOMS}}</select>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Create Session</button>
+                <a href="/admin/timetable" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

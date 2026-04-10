@@ -1,0 +1,29 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2><i class="bi bi-bar-chart me-2"></i>{{EVENT_NAME}}</h2>
+    <a href="/member/events" class="btn btn-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+<div class="card text-white {{TIMER_BG}} mb-4" style="max-width:400px">
+    <div class="card-body text-center">
+        <div style="font-size:3rem;font-weight:700;letter-spacing:4px">{{TIMER_DISPLAY}}</div>
+        <div class="mt-1">
+            Round <strong>{{CURRENT_ROUND}}</strong>
+            &nbsp;|&nbsp;
+            {{TIMER_STATUS_BADGE}}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Match</th><th>Participant 1</th><th>Participant 2</th>
+                    <th>Status</th><th>Round</th><th>Winner</th><th>Decision</th>
+                </tr>
+            </thead>
+            <tbody>{{ROWS_MATCHES}}</tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,35 @@
+<div class="page-header">
+    <h2><i class="bi bi-magic me-2"></i>Generate Weekly Timetable</h2>
+</div>
+<p class="text-muted">Configure one or more class schedules below. The generator will find available slots avoiding coach and room conflicts automatically.</p>
+
+<form method="POST" action="/admin/generate-timetable">
+    <input type="hidden" id="maxIndex" name="maxIndex" value="0">
+    <div id="configContainer">
+        {{FIRST_CONFIG}}
+    </div>
+    <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-outline-secondary" onclick="addConfig()">
+            <i class="bi bi-plus-circle me-1"></i>Add Configuration
+        </button>
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-magic me-1"></i>Generate Timetable
+        </button>
+        <a href="/admin/timetable" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<script>
+let currentIndex = 0;
+const configTemplate = `{{CONFIG_TEMPLATE_JS}}`;
+function addConfig() {
+    currentIndex++;
+    document.getElementById('maxIndex').value = currentIndex;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = configTemplate.replaceAll('__INDEX__', currentIndex);
+    document.getElementById('configContainer').appendChild(wrapper);
+}
+function removeConfig(btn) {
+    btn.closest('.config-card').remove();
+}
+</script>

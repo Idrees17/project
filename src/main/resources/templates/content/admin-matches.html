@@ -1,0 +1,25 @@
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2><i class="bi bi-diagram-3 me-2"></i>Matches &mdash; {{EVENT_NAME}}</h2>
+    <div class="d-flex gap-2">
+        <form method="POST" action="/admin/generate-matches" style="display:inline;">
+            <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+            <button class="btn btn-success" type="submit">
+                <i class="bi bi-magic me-1"></i>Generate Matches
+            </button>
+        </form>
+        <a href="/admin/tournaments" class="btn btn-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+{{MATCHMAKING_LOG}}
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr><th>Match</th><th>Participant 1</th><th>Participant 2</th><th>Status</th><th>Round</th></tr>
+            </thead>
+            <tbody>{{ROWS_MATCHES}}</tbody>
+        </table>
+    </div>
+</div>

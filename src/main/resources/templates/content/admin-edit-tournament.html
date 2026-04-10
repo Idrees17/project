@@ -1,0 +1,39 @@
+<div class="page-header">
+    <h2><i class="bi bi-pencil me-2"></i>Edit Event</h2>
+</div>
+
+<div class="card" style="max-width:700px">
+    <div class="card-body">
+        <form method="POST" action="/admin/edit-tournament" class="row g-3">
+            <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+            <div class="col-md-6">
+                <label class="form-label">Event Name</label>
+                <input class="form-control" name="eventName" value="{{EVENT_NAME}}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" name="eventDate" value="{{EVENT_DATE}}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Location</label>
+                <input class="form-control" name="location" value="{{EVENT_LOCATION}}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">{{OPTIONS_STATUS}}</select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Format</label>
+                <select class="form-select" name="format">{{OPTIONS_FORMAT}}</select>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Allowed Martial Arts (comma separated)</label>
+                <input class="form-control" name="allowedMartialArts" value="{{ALLOWED_ARTS}}">
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Update</button>
+                <a href="/admin/tournaments" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

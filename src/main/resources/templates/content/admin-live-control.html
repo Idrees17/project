@@ -1,0 +1,76 @@
+{{AUTO_REFRESH}}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2><i class="bi bi-broadcast me-2"></i>Live Control &mdash; {{EVENT_NAME}}</h2>
+    <a href="/admin/event-results?eventId={{EVENT_ID}}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Results
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+
+    <!-- Timer display -->
+    <div class="col-md-4">
+        <div class="card text-white text-center {{TIMER_BG}}">
+            <div class="card-body py-4">
+                <div style="font-size:3.5rem;font-weight:700;letter-spacing:4px">{{TIMER_DISPLAY}}</div>
+                <div class="mt-2">
+                    Round <strong>{{CURRENT_ROUND}}</strong>
+                    &nbsp;|&nbsp;
+                    {{TIMER_STATUS_BADGE}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer controls -->
+    <div class="col-md-8 d-flex flex-column justify-content-center gap-3">
+        <div class="d-flex gap-2 flex-wrap">
+            <form method="POST" action="/admin/live-control/start" style="display:inline;">
+                <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+                <button class="btn btn-success" type="submit"><i class="bi bi-play-fill me-1"></i>Start</button>
+            </form>
+            <form method="POST" action="/admin/live-control/pause" style="display:inline;">
+                <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+                <button class="btn btn-warning" type="submit"><i class="bi bi-pause-fill me-1"></i>Pause</button>
+            </form>
+            <form method="POST" action="/admin/live-control/reset" style="display:inline;">
+                <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+                <button class="btn btn-secondary" type="submit"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+            </form>
+            <form method="POST" action="/admin/live-control/tick" style="display:inline;">
+                <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+                <button class="btn btn-outline-dark" type="submit"><i class="bi bi-skip-backward me-1"></i>Tick -1s</button>
+            </form>
+        </div>
+        <form method="POST" action="/admin/live-control/set-round" class="d-flex gap-2 align-items-center">
+            <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+            <label class="form-label mb-0 text-nowrap">Round:</label>
+            <input type="number" class="form-control" style="width:80px" name="round" value="{{CURRENT_ROUND}}">
+            <button class="btn btn-outline-primary" type="submit">Set Round</button>
+        </form>
+        <form method="POST" action="/admin/live-control/set-round-time" class="d-flex gap-2 align-items-center">
+            <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+            <label class="form-label mb-0 text-nowrap">Round Time (s):</label>
+            <input type="number" class="form-control" style="width:100px" name="roundTimeSeconds" value="{{ROUND_TIME_SECONDS}}">
+            <button class="btn btn-outline-primary" type="submit">Set Time</button>
+        </form>
+    </div>
+</div>
+
+<!-- Select current match -->
+<div class="card mb-4">
+    <div class="card-header fw-semibold">Select Current Match</div>
+    <div class="card-body">
+        <form method="POST" action="/admin/live-control/select-match" class="d-flex gap-2 align-items-center">
+            <input type="hidden" name="eventId" value="{{EVENT_ID}}">
+            <select class="form-select" name="matchId">
+                {{OPTIONS_MATCHES}}
+            </select>
+            <button class="btn btn-primary text-nowrap" type="submit">Set Match</button>
+        </form>
+    </div>
+</div>
+
+<!-- Result entry — only shown when a match is selected -->
+{{RESULT_ENTRY_SECTION}}

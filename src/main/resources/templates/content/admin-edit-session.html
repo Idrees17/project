@@ -1,0 +1,39 @@
+<div class="page-header">
+    <h2><i class="bi bi-pencil me-2"></i>Edit Session</h2>
+</div>
+
+<div class="card" style="max-width:620px">
+    <div class="card-body">
+        <form method="POST" action="/admin/edit-session" class="row g-3">
+            <input type="hidden" name="sessionId" value="{{SESSION_ID}}">
+            <div class="col-12">
+                <label class="form-label fw-semibold">Class</label>
+                <p class="form-control-plaintext ps-1">{{CLASS_NAME}}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Day</label>
+                <select class="form-select" name="day">{{OPTIONS_DAYS}}</select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Start Time</label>
+                <input type="time" class="form-control" name="time" value="{{START_TIME}}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Duration (minutes)</label>
+                <input type="number" class="form-control" min="30" step="30" name="durationMinutes" value="{{DURATION}}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Coach</label>
+                <select class="form-select" name="coach">{{OPTIONS_COACHES}}</select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Room</label>
+                <select class="form-select" name="room">{{OPTIONS_ROOMS}}</select>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Update Session</button>
+                <a href="/admin/timetable" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
