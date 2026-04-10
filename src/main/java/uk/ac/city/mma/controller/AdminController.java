@@ -18,91 +18,134 @@ public class AdminController {
     private LiveEventService liveEventService = new LiveEventService();
     private MembershipService membershipService = new MembershipService();
 
+    /*
+     SHARED HTML HELPERS
+    */
+
+    private String pageStart(String title, String activeNav) {
+        return "<!DOCTYPE html><html lang='en'>" +
+                "<head>" +
+                "<meta charset='UTF-8'>" +
+                "<meta name='viewport' content='width=device-width, initial-scale=1'>" +
+                "<title>" + title + " | MMA Gym Admin</title>" +
+                "<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' rel='stylesheet'>" +
+                "<link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css' rel='stylesheet'>" +
+                "<style>" +
+                "body { background-color: #f8f9fa; }" +
+                ".navbar-brand { font-weight: 700; letter-spacing: 1px; }" +
+                ".sidebar { min-height: calc(100vh - 56px); background: #212529; padding-top: 1rem; }" +
+                ".sidebar .nav-link { color: #adb5bd; padding: .5rem 1rem; border-radius: 6px; margin: 2px 8px; }" +
+                ".sidebar .nav-link:hover { color: #fff; background: #343a40; }" +
+                ".sidebar .nav-link.active { color: #fff; background: #0d6efd; }" +
+                ".sidebar .nav-link i { margin-right: 8px; }" +
+                ".main-content { padding: 2rem; }" +
+                ".page-header { border-bottom: 2px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 1.5rem; }" +
+                ".card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); }" +
+                ".table thead th { background-color: #212529; color: #fff; border-color: #212529; }" +
+                ".badge-generated { background-color: #6f42c1; }" +
+                "</style>" +
+                "</head>" +
+                "<body>" +
+                "<nav class='navbar navbar-dark bg-dark'>" +
+                "<div class='container-fluid'>" +
+                "<span class='navbar-brand'><i class='bi bi-shield-fill-check me-2'></i>MMA Gym Admin</span>" +
+                "<a href='/login' class='btn btn-sm btn-outline-light'>Logout</a>" +
+                "</div>" +
+                "</nav>" +
+                "<div class='container-fluid'><div class='row'>" +
+                "<nav class='col-md-2 d-none d-md-block sidebar'>" +
+                "<ul class='nav flex-column'>" +
+                navLink("/admin-dashboard",    "bi-speedometer2", "Dashboard",   activeNav) +
+                navLink("/admin/classes",      "bi-journal-text", "Classes",      activeNav) +
+                navLink("/admin/timetable",    "bi-calendar3",    "Timetable",    activeNav) +
+                navLink("/admin/coaches",      "bi-person-badge", "Coaches",      activeNav) +
+                navLink("/admin/rooms",        "bi-door-open",    "Rooms",        activeNav) +
+                navLink("/admin/members",      "bi-people",       "Members",      activeNav) +
+                navLink("/admin/memberships",  "bi-card-checklist","Memberships", activeNav) +
+                navLink("/admin/tournaments",  "bi-trophy",       "Events",       activeNav) +
+                "</ul></nav>" +
+                "<main class='col-md-10 main-content'>";
+    }
+
+    private String navLink(String href, String icon, String label, String active) {
+        String cls = label.equals(active) ? "nav-link active" : "nav-link";
+        return "<li class='nav-item'><a href='" + href + "' class='" + cls + "'>" +
+                "<i class='bi " + icon + "'></i>" + label + "</a></li>";
+    }
+
+    private String pageEnd() {
+        return "</main></div></div>" +
+                "<script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'></script>" +
+                "</body></html>";
+    }
+
+    private String alertInfo(String msg) {
+        return "<div class='alert alert-info'>" + msg + "</div>";
+    }
+
+    /*
+     CLASSES PAGE
+    */
 
     public String getClassesPage() {
 
         List<GymClass> classes = classService.getAllClasses();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Classes", "Classes"));
 
-        html.append("<html>");
-        html.append("<head><title>Class Management</title></head>");
-        html.append("<body>");
+        html.append("<div class='page-header d-flex justify-content-between align-items-center'>")
+                .append("<h2><i class='bi bi-journal-text me-2'></i>Manage Classes</h2>")
+                .append("</div>");
 
-        html.append("<h1>Manage Classes</h1>");
+        html.append("<div class='card mb-4'><div class='card-header fw-semibold'>Create New Class</div><div class='card-body'>")
+                .append("<form method='POST' action='/admin/classes' class='row g-3'>")
+                .append("<div class='col-md-3'><label class='form-label'>Class Name</label><input class='form-control' name='className' required></div>")
+                .append("<div class='col-md-3'><label class='form-label'>Description</label><input class='form-control' name='description'></div>")
+                .append("<div class='col-md-3'><label class='form-label'>Skill Level</label>")
+                .append("<select class='form-select' name='skillLevel'>")
+                .append("<option value='Beginner'>Beginner</option>")
+                .append("<option value='Intermediate/Advanced'>Intermediate/Advanced</option>")
+                .append("</select></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Capacity</label><input class='form-control' type='number' name='capacity' required></div>")
+                .append("<div class='col-md-1 d-flex align-items-end'><button class='btn btn-primary w-100' type='submit'>Add</button></div>")
+                .append("</form></div></div>");
 
-        html.append("<h2>Create New Class</h2>");
-
-        html.append("<form method='POST' action='/admin/classes'>");
-
-        html.append("Class Name: <input name='className'><br>");
-        html.append("Description: <input name='description'><br>");
-        html.append("Skill Level: <input name='skillLevel'><br>");
-        html.append("Capacity: <input name='capacity' type='number'><br>");
-
-        html.append("<button type='submit'>Create Class</button>");
-
-        html.append("</form>");
-
-        html.append("<h2>Existing Classes</h2>");
-
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>ID</th>");
-        html.append("<th>Name</th>");
-        html.append("<th>Skill Level</th>");
-        html.append("<th>Capacity</th>");
-        html.append("<th>Action</th>");
-        html.append("<th>Session</th>");
-        html.append("</tr>");
-
+        // Table
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Skill Level</th><th>Capacity</th><th>Actions</th></tr></thead><tbody>");
 
         for (GymClass c : classes) {
-
-            html.append("<tr>");
-
-            html.append("<td>").append(c.getClassId()).append("</td>");
-            html.append("<td>").append(c.getClassName()).append("</td>");
-            html.append("<td>").append(c.getSkillLevel()).append("</td>");
-            html.append("<td>").append(c.getCapacity()).append("</td>");
-
-            html.append("<td>");
-            html.append("<form method='POST' action='/admin/delete-class' style='display:inline;'>");
-            html.append("<input type='hidden' name='classId' value='")
-                    .append(c.getClassId())
-                    .append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
-            html.append("</td>");
-
-            html.append("<td>");
-            html.append("<a href='/admin/add-session?classId=")
-                    .append(c.getClassId())
-                    .append("'>Add Session</a>");
-            html.append("</td>");
-
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>").append(c.getClassId()).append("</td>")
+                    .append("<td>").append(c.getClassName()).append("</td>")
+                    .append("<td><span class='badge bg-secondary'>").append(c.getSkillLevel()).append("</span></td>")
+                    .append("<td>").append(c.getCapacity()).append("</td>")
+                    .append("<td class='d-flex gap-2'>")
+                    .append("<a href='/admin/add-session?classId=").append(c.getClassId()).append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-plus-circle me-1'></i>Add Session</a>")
+                    .append("<form method='POST' action='/admin/delete-class' style='display:inline;'>")
+                    .append("<input type='hidden' name='classId' value='").append(c.getClassId()).append("'>")
+                    .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete this class?\")'><i class='bi bi-trash me-1'></i>Delete</button>")
+                    .append("</form>")
+                    .append("</td></tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><br>");
-        html.append("<button onclick=\"location.href='/admin-dashboard'\">Back</button>");
-
-        html.append("</body>");
-        html.append("</html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
 
-    public void createClass(String name,String description,String skill,int capacity){
-
-        classService.createClass(name,description,skill,capacity);
+    public void createClass(String name, String description, String skill, int capacity) {
+        classService.createClass(name, description, skill, capacity);
     }
 
-    public void deleteClass(int classId){
+    public void deleteClass(int classId) {
         classService.deleteClass(classId);
     }
+
+    /*
+     ADD SESSION PAGE
+    */
 
     public String getAddSessionPage() {
 
@@ -110,43 +153,40 @@ public class AdminController {
         List<Coach> coaches = coachService.getAllCoaches();
         List<Room> rooms = roomService.getAllRooms();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Add Session", "Timetable"));
 
-        html.append("<html><body>");
-        html.append("<h1>Add Session</h1>");
-        html.append("<form method='POST' action='/admin/add-session'>");
+        html.append("<div class='page-header'><h2><i class='bi bi-plus-circle me-2'></i>Add Session</h2></div>");
 
-        html.append("Class: <select name='classId'>");
+        html.append("<div class='card' style='max-width:600px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/add-session' class='row g-3'>")
+                .append("<div class='col-12'><label class='form-label'>Class</label><select class='form-select' name='classId'>");
         for (GymClass c : classes) {
-            html.append("<option value='").append(c.getClassId()).append("'>")
-                    .append(c.getClassName()).append("</option>");
+            html.append("<option value='").append(c.getClassId()).append("'>").append(c.getClassName()).append("</option>");
         }
-        html.append("</select><br>");
-
-        html.append("Day: <input name='day'><br>");
-        html.append("Start Time: <input type='time' name='time'><br>");
-        html.append("Duration (minutes): <input type='number' min='30' step='30' name='durationMinutes'><br>");
-
-        html.append("Coach: <select name='coachName'>");
+        html.append("</select></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Day</label>")
+                .append("<select class='form-select' name='day'>")
+                .append("<option>Monday</option><option>Tuesday</option><option>Wednesday</option>")
+                .append("<option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>")
+                .append("</select></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Start Time</label><input type='time' class='form-control' name='time'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Duration (minutes)</label><input type='number' class='form-control' min='30' step='30' name='durationMinutes'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Coach</label><select class='form-select' name='coachName'>");
         for (Coach coach : coaches) {
-            html.append("<option value='").append(coach.getName()).append("'>")
-                    .append(coach.getName()).append("</option>");
+            html.append("<option value='").append(coach.getName()).append("'>").append(coach.getName()).append("</option>");
         }
-        html.append("</select><br>");
-
-        html.append("Room: <select name='roomName'>");
+        html.append("</select></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Room</label><select class='form-select' name='roomName'>");
         for (Room room : rooms) {
-            html.append("<option value='").append(room.getName()).append("'>")
-                    .append(room.getName()).append("</option>");
+            html.append("<option value='").append(room.getName()).append("'>").append(room.getName()).append("</option>");
         }
-        html.append("</select><br>");
+        html.append("</select></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Create Session</button>")
+                .append("<a href='/admin/timetable' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        html.append("<button type='submit'>Create Session</button>");
-        html.append("</form>");
-
-        html.append("<br><button onclick=\"location.href='/admin/timetable'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -155,85 +195,74 @@ public class AdminController {
         classSessionService.createSession(classId, day, time, durationMinutes, coachName, roomName);
     }
 
+    /*
+     TIMETABLE PAGE
+    */
+
     public String getTimetablePage() {
 
         List<ClassSession> sessions = classSessionService.getAllSessions();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Timetable", "Timetable"));
 
-        html.append("<html><body>");
-        html.append("<h1>Timetable Management</h1>");
-
-        html.append("<button onclick=\"location.href='/admin/add-session'\">Add Session</button> ");
-        html.append("<button onclick=\"location.href='/admin/generate-timetable'\">Generate Timetable</button>");
-        html.append("<br><br>");
+        html.append("<div class='page-header d-flex justify-content-between align-items-center'>")
+                .append("<h2><i class='bi bi-calendar3 me-2'></i>Timetable Management</h2>")
+                .append("<div class='d-flex gap-2'>")
+                .append("<a href='/admin/add-session' class='btn btn-primary'><i class='bi bi-plus-circle me-1'></i>Add Session</a>")
+                .append("<a href='/admin/generate-timetable' class='btn btn-outline-secondary'><i class='bi bi-magic me-1'></i>Generate Timetable</a>")
+                .append("</div></div>");
 
         List<String> generationMessages = timetableService.getLastGenerationMessages();
-
         if (!generationMessages.isEmpty()) {
-            html.append("<h2>Generation Messages</h2>");
-            html.append("<ul>");
+            html.append("<div class='alert alert-info'><strong>Generation Log:</strong><ul class='mb-0 mt-1'>");
             for (String msg : generationMessages) {
                 html.append("<li>").append(msg).append("</li>");
             }
-            html.append("</ul><br>");
+            html.append("</ul></div>");
         }
 
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Class</th>");
-        html.append("<th>Skill Level</th>");
-        html.append("<th>Day</th>");
-        html.append("<th>Start Time</th>");
-        html.append("<th>Duration</th>");
-        html.append("<th>Coach</th>");
-        html.append("<th>Room</th>");
-        html.append("<th>Source</th>");
-        html.append("<th>Actions</th>");
-        html.append("</tr>");
+        String[] days = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
 
-        for (ClassSession s : sessions) {
+        for (String day : days) {
+            boolean hasDay = sessions.stream().anyMatch(s -> s.getDayOfWeek().equalsIgnoreCase(day));
+            if (!hasDay) continue;
 
-            html.append("<tr>");
+            html.append("<h5 class='mt-4 mb-2 text-muted text-uppercase fw-bold' style='letter-spacing:1px'>").append(day).append("</h5>")
+                    .append("<div class='card mb-3'><div class='card-body p-0'>")
+                    .append("<table class='table table-hover mb-0'>")
+                    .append("<thead><tr><th>Class</th><th>Skill Level</th><th>Time</th><th>Duration</th><th>Coach</th><th>Room</th><th>Source</th><th>Actions</th></tr></thead><tbody>");
 
-            html.append("<td>").append(s.getClassName()).append("</td>");
-            html.append("<td>").append(s.getSkillLevel()).append("</td>");
-            html.append("<td>").append(s.getDayOfWeek()).append("</td>");
-            html.append("<td>").append(s.getStartTime()).append("</td>");
-            html.append("<td>").append(s.getDurationMinutes()).append(" mins</td>");
-            html.append("<td>").append(s.getCoachName()).append("</td>");
-            html.append("<td>").append(s.getRoom()).append("</td>");
-            html.append("<td>").append(s.isGenerated() ? "Generated" : "Manual").append("</td>");
+            for (ClassSession s : sessions) {
+                if (!s.getDayOfWeek().equalsIgnoreCase(day)) continue;
 
-            html.append("<td>");
+                String sourceBadge = s.isGenerated()
+                        ? "<span class='badge bg-purple' style='background:#6f42c1'>Generated</span>"
+                        : "<span class='badge bg-secondary'>Manual</span>";
 
-            html.append("<form method='POST' action='/admin/delete-session' style='display:inline;'>");
-            html.append("<input type='hidden' name='sessionId' value='")
-                    .append(s.getSessionId())
-                    .append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form> ");
+                html.append("<tr>")
+                        .append("<td>").append(s.getClassName()).append("</td>")
+                        .append("<td><span class='badge bg-secondary'>").append(s.getSkillLevel()).append("</span></td>")
+                        .append("<td>").append(s.getStartTime()).append("</td>")
+                        .append("<td>").append(s.getDurationMinutes()).append(" mins</td>")
+                        .append("<td>").append(s.getCoachName()).append("</td>")
+                        .append("<td>").append(s.getRoom()).append("</td>")
+                        .append("<td>").append(sourceBadge).append("</td>")
+                        .append("<td class='d-flex gap-2'>")
+                        .append("<a href='/admin/edit-session?sessionId=").append(s.getSessionId()).append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil'></i></a>")
+                        .append("<form method='POST' action='/admin/delete-session' style='display:inline;'>")
+                        .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
+                        .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete session?\")'><i class='bi bi-trash'></i></button>")
+                        .append("</form></td></tr>");
+            }
 
-            html.append("<a href='/admin/edit-session?sessionId=")
-                    .append(s.getSessionId())
-                    .append("'>Edit</a>");
-
-            html.append("</td>");
-
-            html.append("</tr>");
+            html.append("</tbody></table></div></div>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><br>");
-        html.append("<button onclick=\"location.href='/admin-dashboard'\">Back</button>");
-
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
-    public void deleteSession(int sessionId){
+    public void deleteSession(int sessionId) {
         classSessionService.deleteSession(sessionId);
     }
 
@@ -242,79 +271,64 @@ public class AdminController {
         classSessionService.updateSession(sessionId, day, time, durationMinutes, coach, room);
     }
 
+    /*
+     EDIT SESSION PAGE
+    */
+
     public String getEditSessionPage(int sessionId) {
 
         ClassSession session = classSessionService.getSessionById(sessionId);
         List<Coach> coaches = coachService.getAllCoaches();
         List<Room> rooms = roomService.getAllRooms();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Edit Session", "Timetable"));
 
-        html.append("<html><body>");
-        html.append("<h1>Edit Session</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-pencil me-2'></i>Edit Session</h2></div>");
 
-        html.append("<form method='POST' action='/admin/edit-session'>");
+        html.append("<div class='card' style='max-width:600px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/edit-session' class='row g-3'>")
+                .append("<input type='hidden' name='sessionId' value='").append(session.getSessionId()).append("'>")
+                .append("<div class='col-12'><label class='form-label fw-semibold'>Class</label>")
+                .append("<p class='form-control-plaintext'>").append(session.getClassName()).append("</p></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Day</label><select class='form-select' name='day'>");
 
-        html.append("<input type='hidden' name='sessionId' value='")
-                .append(session.getSessionId())
-                .append("'>");
-
-        html.append("<p><strong>Class:</strong> ")
-                .append(session.getClassName())
-                .append("</p>");
-
-        // Day dropdown
-        html.append("Day: <select name='day'>");
-        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+        String[] days = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
         for (String day : days) {
-            html.append("<option value='").append(day).append("'");
-            if (day.equals(session.getDayOfWeek())) {
-                html.append(" selected");
-            }
-            html.append(">").append(day).append("</option>");
+            html.append("<option value='").append(day).append("'").append(day.equals(session.getDayOfWeek()) ? " selected" : "").append(">").append(day).append("</option>");
         }
-        html.append("</select><br>");
+        html.append("</select></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Start Time</label>")
+                .append("<input type='time' class='form-control' name='time' value='").append(session.getStartTime()).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Duration (minutes)</label>")
+                .append("<input type='number' class='form-control' min='30' step='30' name='durationMinutes' value='").append(session.getDurationMinutes()).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Coach</label><select class='form-select' name='coach'>");
 
-        // Time input prefilled
-        html.append("Start Time: <input type='time' name='time' value='")
-                .append(session.getStartTime())
-                .append("'><br>");
-
-        // Duration input prefilled
-        html.append("Duration (minutes): <input type='number' min='30' step='30' name='durationMinutes' value='")
-                .append(session.getDurationMinutes())
-                .append("'><br>");
-
-        // Coach dropdown
-        html.append("Coach: <select name='coach'>");
         for (Coach coach : coaches) {
-            html.append("<option value='").append(coach.getName()).append("'");
-            if (coach.getName().equals(session.getCoachName())) {
-                html.append(" selected");
-            }
-            html.append(">").append(coach.getName()).append("</option>");
+            html.append("<option value='").append(coach.getName()).append("'")
+                    .append(coach.getName().equals(session.getCoachName()) ? " selected" : "")
+                    .append(">").append(coach.getName()).append("</option>");
         }
-        html.append("</select><br>");
+        html.append("</select></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Room</label><select class='form-select' name='room'>");
 
-        // Room dropdown
-        html.append("Room: <select name='room'>");
         for (Room room : rooms) {
-            html.append("<option value='").append(room.getName()).append("'");
-            if (room.getName().equals(session.getRoom())) {
-                html.append(" selected");
-            }
-            html.append(">").append(room.getName()).append("</option>");
+            html.append("<option value='").append(room.getName()).append("'")
+                    .append(room.getName().equals(session.getRoom()) ? " selected" : "")
+                    .append(">").append(room.getName()).append("</option>");
         }
-        html.append("</select><br>");
+        html.append("</select></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Update Session</button>")
+                .append("<a href='/admin/timetable' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        html.append("<button type='submit'>Update Session</button>");
-        html.append("</form>");
-
-        html.append("<br><button onclick=\"location.href='/admin/timetable'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
+
+    /*
+     GENERATE TIMETABLE PAGE
+    */
 
     public String getGeneratorPage() {
 
@@ -322,56 +336,46 @@ public class AdminController {
         List<Coach> coaches = coachService.getAllCoaches();
         List<Room> rooms = roomService.getAllRooms();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Generate Timetable", "Timetable"));
 
-        html.append("<html><body>");
-        html.append("<h1>Generate Weekly Timetable</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-magic me-2'></i>Generate Weekly Timetable</h2></div>");
+        html.append("<p class='text-muted'>Add one or more configurations below. Each configuration schedules a class for a set number of sessions per week, avoiding coach and room conflicts automatically.</p>");
 
-        html.append("<form method='POST' action='/admin/generate-timetable'>");
-        html.append("<input type='hidden' id='maxIndex' name='maxIndex' value='0'>");
+        html.append("<form method='POST' action='/admin/generate-timetable'>")
+                .append("<input type='hidden' id='maxIndex' name='maxIndex' value='0'>")
+                .append("<div id='configContainer'>")
+                .append(buildGeneratorConfigHtml(0, classes, coaches, rooms))
+                .append("</div>")
+                .append("<div class='d-flex gap-2 mt-3'>")
+                .append("<button type='button' class='btn btn-outline-secondary' onclick='addConfig()'><i class='bi bi-plus-circle me-1'></i>Add Configuration</button>")
+                .append("<button type='submit' class='btn btn-success'><i class='bi bi-magic me-1'></i>Generate Timetable</button>")
+                .append("<a href='/admin/timetable' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form>");
 
-        html.append("<div id='configContainer'>");
-        html.append(buildGeneratorConfigHtml(0, classes, coaches, rooms));
-        html.append("</div>");
+        html.append("<script>")
+                .append("let currentIndex = 0;")
+                .append("function addConfig(){")
+                .append("  currentIndex++;")
+                .append("  document.getElementById('maxIndex').value = currentIndex;")
+                .append("  const container = document.getElementById('configContainer');")
+                .append("  const wrapper = document.createElement('div');")
+                .append("  wrapper.innerHTML = `").append(escapeForJs(buildGeneratorConfigHtml("__INDEX__", classes, coaches, rooms))).append("`.replaceAll('__INDEX__', currentIndex);")
+                .append("  container.appendChild(wrapper);")
+                .append("}")
+                .append("function removeConfig(btn){ btn.closest('.config-card').remove(); }")
+                .append("</script>");
 
-        html.append("<br>");
-        html.append("<button type='button' onclick='addConfig()'>Add Configuration</button> ");
-        html.append("<button type='submit'>Generate Timetable</button> ");
-        html.append("<button type=\"button\" onclick=\"location.href='/admin/timetable'\">Back</button>");
-
-        html.append("</form>");
-
-        html.append("<script>");
-        html.append("let currentIndex = 0;");
-        html.append("function addConfig(){");
-        html.append("  currentIndex++;");
-        html.append("  document.getElementById('maxIndex').value = currentIndex;");
-        html.append("  const container = document.getElementById('configContainer');");
-        html.append("  const wrapper = document.createElement('div');");
-        html.append("  wrapper.innerHTML = `").append(escapeForJs(buildGeneratorConfigHtml("__INDEX__", classes, coaches, rooms))).append("`.replaceAll('__INDEX__', currentIndex);");
-        html.append("  container.appendChild(wrapper);");
-        html.append("}");
-        html.append("function removeConfig(btn){");
-        html.append("  btn.parentElement.remove();");
-        html.append("}");
-        html.append("</script>");
-
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
     public void generateSmartTimetable(Map<String, String> params) {
 
         List<GenerationRequest> requests = new ArrayList<>();
-
         int maxIndex = Integer.parseInt(params.getOrDefault("maxIndex", "0"));
 
         for (int i = 0; i <= maxIndex; i++) {
-
-            if (params.get("classId_" + i) == null) {
-                continue;
-            }
+            if (params.get("classId_" + i) == null) continue;
 
             GenerationRequest req = new GenerationRequest();
             req.classId = Integer.parseInt(params.get("classId_" + i));
@@ -382,117 +386,55 @@ public class AdminController {
             req.beforeTime = params.get("beforeTime_" + i);
             req.coachName = params.get("coachName_" + i);
             req.roomName = params.get("roomName_" + i);
-
             requests.add(req);
         }
 
         timetableService.generateMultiple(requests);
     }
 
-
+    /*
+    COACHES PAGE
+    */
 
     public String getCoachesPage() {
 
         List<Coach> coaches = coachService.getAllCoaches();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Coaches", "Coaches"));
 
-        html.append("<html><body>");
-        html.append("<h1>Coaches</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-person-badge me-2'></i>Coaches</h2></div>");
 
-        html.append("<form method='POST' action='/admin/coaches'>");
-        html.append("Name: <input name='name'><br>");
-        html.append("Specialty: <input name='specialty'><br>");
-        html.append("<button type='submit'>Add Coach</button>");
-        html.append("</form><br>");
+        html.append("<div class='card mb-4'><div class='card-header fw-semibold'>Add Coach</div><div class='card-body'>")
+                .append("<form method='POST' action='/admin/coaches' class='row g-3'>")
+                .append("<div class='col-md-5'><label class='form-label'>Name</label><input class='form-control' name='name' required></div>")
+                .append("<div class='col-md-5'><label class='form-label'>Specialty</label><input class='form-control' name='specialty'></div>")
+                .append("<div class='col-md-2 d-flex align-items-end'><button class='btn btn-primary w-100' type='submit'>Add</button></div>")
+                .append("</form></div></div>");
 
-        html.append("<table border='1'>");
-        html.append("<tr><th>ID</th><th>Name</th><th>Specialty</th><th>Actions</th></tr>");
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Specialty</th><th>Actions</th></tr></thead><tbody>");
 
         for (Coach c : coaches) {
-            html.append("<tr>");
-
-            html.append("<td>").append(c.getCoachId()).append("</td>");
-            html.append("<td>").append(c.getName()).append("</td>");
-            html.append("<td>").append(c.getSpecialty()).append("</td>");
-
-            html.append("<td>");
-
-            html.append("<a href='/admin/edit-coach?coachId=")
-                    .append(c.getCoachId())
-                    .append("'>Edit</a> ");
-
-            html.append("<form method='POST' action='/admin/delete-coach' style='display:inline;'>");
-            html.append("<input type='hidden' name='coachId' value='").append(c.getCoachId()).append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
-
-            html.append("</td>");
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>").append(c.getCoachId()).append("</td>")
+                    .append("<td>").append(c.getName()).append("</td>")
+                    .append("<td>").append(c.getSpecialty()).append("</td>")
+                    .append("<td class='d-flex gap-2'>")
+                    .append("<a href='/admin/edit-coach?coachId=").append(c.getCoachId()).append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil me-1'></i>Edit</a>")
+                    .append("<form method='POST' action='/admin/delete-coach' style='display:inline;'>")
+                    .append("<input type='hidden' name='coachId' value='").append(c.getCoachId()).append("'>")
+                    .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete this coach?\")'><i class='bi bi-trash me-1'></i>Delete</button>")
+                    .append("</form></td></tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back to Dashboard</button>");
-        html.append("</body></html>");
-
-        return html.toString();
-    }
-
-    public String getRoomsPage() {
-
-        List<Room> rooms = roomService.getAllRooms();
-
-        StringBuilder html = new StringBuilder();
-
-        html.append("<html><body>");
-        html.append("<h1>Rooms</h1>");
-
-        html.append("<form method='POST' action='/admin/rooms'>");
-        html.append("Name: <input name='name'><br>");
-        html.append("Capacity: <input name='capacity' type='number'><br>");
-        html.append("<button type='submit'>Add Room</button>");
-        html.append("</form><br>");
-
-        html.append("<table border='1'>");
-        html.append("<tr><th>ID</th><th>Name</th><th>Capacity</th><th>Actions</th></tr>");
-
-        for (Room r : rooms) {
-            html.append("<tr>");
-
-            html.append("<td>").append(r.getRoomId()).append("</td>");
-            html.append("<td>").append(r.getName()).append("</td>");
-            html.append("<td>").append(r.getCapacity()).append("</td>");
-
-            html.append("<td>");
-
-            html.append("<a href='/admin/edit-room?roomId=")
-                    .append(r.getRoomId())
-                    .append("'>Edit</a> ");
-
-            html.append("<form method='POST' action='/admin/delete-room' style='display:inline;'>");
-            html.append("<input type='hidden' name='roomId' value='").append(r.getRoomId()).append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
-
-            html.append("</td>");
-            html.append("</tr>");
-        }
-
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back to Dashboard</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
 
     public void addCoach(String name, String specialty) {
         coachService.addCoach(name, specialty);
-    }
-
-    public void addRoom(String name, int capacity) {
-        roomService.addRoom(name, capacity);
     }
 
     public void deleteCoach(int coachId) {
@@ -503,26 +445,71 @@ public class AdminController {
 
         Coach coach = coachService.getCoachById(coachId);
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Edit Coach", "Coaches"));
 
-        html.append("<html><body>");
-        html.append("<h1>Edit Coach</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-pencil me-2'></i>Edit Coach</h2></div>");
 
-        html.append("<form method='POST' action='/admin/edit-coach'>");
-        html.append("<input type='hidden' name='coachId' value='").append(coach.getCoachId()).append("'>");
-        html.append("Name: <input name='name' value='").append(coach.getName()).append("'><br>");
-        html.append("Specialty: <input name='specialty' value='").append(coach.getSpecialty()).append("'><br>");
-        html.append("<button type='submit'>Update Coach</button>");
-        html.append("</form>");
+        html.append("<div class='card' style='max-width:500px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/edit-coach' class='row g-3'>")
+                .append("<input type='hidden' name='coachId' value='").append(coach.getCoachId()).append("'>")
+                .append("<div class='col-12'><label class='form-label'>Name</label><input class='form-control' name='name' value='").append(coach.getName()).append("' required></div>")
+                .append("<div class='col-12'><label class='form-label'>Specialty</label><input class='form-control' name='specialty' value='").append(coach.getSpecialty()).append("'></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Update</button>")
+                .append("<a href='/admin/coaches' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        html.append("<br><button onclick=\"location.href='/admin/coaches'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
     public void updateCoach(int coachId, String name, String specialty) {
         coachService.updateCoach(coachId, name, specialty);
+    }
+
+    /*
+    ROOMS PAGE
+    */
+
+    public String getRoomsPage() {
+
+        List<Room> rooms = roomService.getAllRooms();
+
+        StringBuilder html = new StringBuilder(pageStart("Rooms", "Rooms"));
+
+        html.append("<div class='page-header'><h2><i class='bi bi-door-open me-2'></i>Rooms</h2></div>");
+
+        html.append("<div class='card mb-4'><div class='card-header fw-semibold'>Add Room</div><div class='card-body'>")
+                .append("<form method='POST' action='/admin/rooms' class='row g-3'>")
+                .append("<div class='col-md-5'><label class='form-label'>Name</label><input class='form-control' name='name' required></div>")
+                .append("<div class='col-md-5'><label class='form-label'>Capacity</label><input class='form-control' type='number' name='capacity' required></div>")
+                .append("<div class='col-md-2 d-flex align-items-end'><button class='btn btn-primary w-100' type='submit'>Add</button></div>")
+                .append("</form></div></div>");
+
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Capacity</th><th>Actions</th></tr></thead><tbody>");
+
+        for (Room r : rooms) {
+            html.append("<tr>")
+                    .append("<td>").append(r.getRoomId()).append("</td>")
+                    .append("<td>").append(r.getName()).append("</td>")
+                    .append("<td>").append(r.getCapacity()).append("</td>")
+                    .append("<td class='d-flex gap-2'>")
+                    .append("<a href='/admin/edit-room?roomId=").append(r.getRoomId()).append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil me-1'></i>Edit</a>")
+                    .append("<form method='POST' action='/admin/delete-room' style='display:inline;'>")
+                    .append("<input type='hidden' name='roomId' value='").append(r.getRoomId()).append("'>")
+                    .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete this room?\")'><i class='bi bi-trash me-1'></i>Delete</button>")
+                    .append("</form></td></tr>");
+        }
+
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
+        return html.toString();
+    }
+
+    public void addRoom(String name, int capacity) {
+        roomService.addRoom(name, capacity);
     }
 
     public void deleteRoom(int roomId) {
@@ -533,21 +520,21 @@ public class AdminController {
 
         Room room = roomService.getRoomById(roomId);
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Edit Room", "Rooms"));
 
-        html.append("<html><body>");
-        html.append("<h1>Edit Room</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-pencil me-2'></i>Edit Room</h2></div>");
 
-        html.append("<form method='POST' action='/admin/edit-room'>");
-        html.append("<input type='hidden' name='roomId' value='").append(room.getRoomId()).append("'>");
-        html.append("Name: <input name='name' value='").append(room.getName()).append("'><br>");
-        html.append("Capacity: <input name='capacity' type='number' value='").append(room.getCapacity()).append("'><br>");
-        html.append("<button type='submit'>Update Room</button>");
-        html.append("</form>");
+        html.append("<div class='card' style='max-width:500px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/edit-room' class='row g-3'>")
+                .append("<input type='hidden' name='roomId' value='").append(room.getRoomId()).append("'>")
+                .append("<div class='col-12'><label class='form-label'>Name</label><input class='form-control' name='name' value='").append(room.getName()).append("' required></div>")
+                .append("<div class='col-12'><label class='form-label'>Capacity</label><input class='form-control' type='number' name='capacity' value='").append(room.getCapacity()).append("' required></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Update</button>")
+                .append("<a href='/admin/rooms' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        html.append("<br><button onclick=\"location.href='/admin/rooms'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -555,57 +542,39 @@ public class AdminController {
         roomService.updateRoom(roomId, name, capacity);
     }
 
+    /*
+     MEMBERS PAGE
+    */
 
     public String getMembersPage() {
 
         List<MemberProfile> members = memberService.getAllProfiles();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Members", "Members"));
 
-        html.append("<html><body>");
-        html.append("<h1>Manage Members</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-people me-2'></i>Manage Members</h2></div>");
 
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>ID</th>");
-        html.append("<th>Name</th>");
-        html.append("<th>Age</th>");
-        html.append("<th>Height</th>");
-        html.append("<th>Weight</th>");
-        html.append("<th>Actions</th>");
-        html.append("</tr>");
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Height</th><th>Weight</th><th>Actions</th></tr></thead><tbody>");
 
         for (MemberProfile m : members) {
-            html.append("<tr>");
-
-            html.append("<td>").append(m.getMemberId()).append("</td>");
-            html.append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>");
-            html.append("<td>").append(m.getAge()).append("</td>");
-            html.append("<td>").append(m.getHeightCm()).append(" cm</td>");
-            html.append("<td>").append(m.getWeightKg()).append(" kg</td>");
-
-            html.append("<td>");
-
-            html.append("<a href='/admin/edit-member?memberId=")
-                    .append(m.getMemberId())
-                    .append("'>Edit</a> ");
-
-            html.append("<form method='POST' action='/admin/delete-member' style='display:inline;'>");
-            html.append("<input type='hidden' name='memberId' value='")
-                    .append(m.getMemberId())
-                    .append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
-
-            html.append("</td>");
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>").append(m.getMemberId()).append("</td>")
+                    .append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>")
+                    .append("<td>").append(m.getAge()).append("</td>")
+                    .append("<td>").append(m.getHeightCm()).append(" cm</td>")
+                    .append("<td>").append(m.getWeightKg()).append(" kg</td>")
+                    .append("<td class='d-flex gap-2'>")
+                    .append("<a href='/admin/edit-member?memberId=").append(m.getMemberId()).append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil me-1'></i>Edit</a>")
+                    .append("<form method='POST' action='/admin/delete-member' style='display:inline;'>")
+                    .append("<input type='hidden' name='memberId' value='").append(m.getMemberId()).append("'>")
+                    .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete this member?\")'><i class='bi bi-trash me-1'></i>Delete</button>")
+                    .append("</form></td></tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back to Dashboard</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -617,211 +586,106 @@ public class AdminController {
 
         MemberProfile member = memberService.getProfileByMemberId(memberId);
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Edit Member", "Members"));
 
-        html.append("<html><body>");
-        html.append("<h1>Edit Member</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-pencil me-2'></i>Edit Member</h2></div>");
 
-        html.append("<form method='POST' action='/admin/edit-member'>");
+        html.append("<div class='card' style='max-width:600px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/edit-member' class='row g-3'>")
+                .append("<input type='hidden' name='memberId' value='").append(member.getMemberId()).append("'>")
+                .append("<div class='col-md-6'><label class='form-label'>First Name</label><input class='form-control' name='firstName' value='").append(member.getFirstName()).append("' required></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Last Name</label><input class='form-control' name='lastName' value='").append(member.getLastName()).append("' required></div>")
+                .append("<div class='col-md-4'><label class='form-label'>Age</label><input type='number' class='form-control' name='age' value='").append(member.getAge()).append("'></div>")
+                .append("<div class='col-md-4'><label class='form-label'>Height (cm)</label><input type='number' class='form-control' name='heightCm' value='").append(member.getHeightCm()).append("'></div>")
+                .append("<div class='col-md-4'><label class='form-label'>Weight (kg)</label><input type='number' step='0.1' class='form-control' name='weightKg' value='").append(member.getWeightKg()).append("'></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Update</button>")
+                .append("<a href='/admin/members' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        html.append("<input type='hidden' name='memberId' value='")
-                .append(member.getMemberId())
-                .append("'>");
-
-        html.append("First Name: <input name='firstName' value='")
-                .append(member.getFirstName())
-                .append("'><br>");
-
-        html.append("Last Name: <input name='lastName' value='")
-                .append(member.getLastName())
-                .append("'><br>");
-
-        html.append("Age: <input type='number' name='age' value='")
-                .append(member.getAge())
-                .append("'><br>");
-
-        html.append("Height (cm): <input type='number' name='heightCm' value='")
-                .append(member.getHeightCm())
-                .append("'><br>");
-
-        html.append("Weight (kg): <input type='number' step='0.1' name='weightKg' value='")
-                .append(member.getWeightKg())
-                .append("'><br>");
-
-        html.append("<button type='submit'>Update Member</button>");
-        html.append("</form>");
-
-        html.append("<br><button onclick=\"location.href='/admin/members'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
     public void updateMember(int memberId, String firstName, String lastName,
                              int age, int heightCm, double weightKg) {
-
-        memberService.updateProfileByMemberId(
-                memberId,
-                firstName,
-                lastName,
-                age,
-                heightCm,
-                weightKg
-        );
+        memberService.updateProfileByMemberId(memberId, firstName, lastName, age, heightCm, weightKg);
     }
 
-    private String buildGeneratorConfigHtml(Object index, List<GymClass> classes,
-                                            List<Coach> coaches, List<Room> rooms) {
-
-        String idx = String.valueOf(index);
-        StringBuilder html = new StringBuilder();
-
-        html.append("<fieldset style='margin-bottom:20px; padding:10px;'>");
-        html.append("<legend>Configuration ").append(idx).append("</legend>");
-
-        html.append("Class: <select name='classId_").append(idx).append("'>");
-        for (GymClass c : classes) {
-            html.append("<option value='").append(c.getClassId()).append("'>")
-                    .append(c.getClassName())
-                    .append("</option>");
-        }
-        html.append("</select><br>");
-
-        html.append("Skill Level: <select name='skillLevel_").append(idx).append("'>");
-        html.append("<option value='Beginner'>Beginner</option>");
-        html.append("<option value='Intermediate/Advanced'>Intermediate/Advanced</option>");
-        html.append("</select><br>");
-
-        html.append("Sessions per week: <input type='number' min='1' max='5' name='sessionsPerWeek_")
-                .append(idx).append("'><br>");
-
-        html.append("Duration (minutes): <input type='number' min='30' step='30' name='durationMinutes_")
-                .append(idx).append("'><br>");
-
-        html.append("After time: <input type='time' name='afterTime_").append(idx).append("'><br>");
-        html.append("Before time: <input type='time' name='beforeTime_").append(idx).append("'><br>");
-
-        html.append("Coach: <select name='coachName_").append(idx).append("'>");
-        for (Coach coach : coaches) {
-            html.append("<option value='").append(coach.getName()).append("'>")
-                    .append(coach.getName())
-                    .append("</option>");
-        }
-        html.append("</select><br>");
-
-        html.append("Room: <select name='roomName_").append(idx).append("'>");
-        for (Room room : rooms) {
-            html.append("<option value='").append(room.getName()).append("'>")
-                    .append(room.getName())
-                    .append("</option>");
-        }
-        html.append("</select><br>");
-
-        html.append("<button type='button' onclick='removeConfig(this)'>Remove Configuration</button>");
-        html.append("</fieldset>");
-
-        return html.toString();
-    }
+    /*
+     TOURNAMENTS / EVENTS PAGE
+    */
 
     public String getTournamentsPage() {
 
         List<Event> events = eventService.getAllEvents();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Events", "Events"));
 
-        html.append("<html><body>");
-        html.append("<h1>Manage Events</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-trophy me-2'></i>Manage Events</h2></div>");
 
-        html.append("<h2>Create Event</h2>");
-        html.append("<form method='POST' action='/admin/tournaments'>");
+        // Create form
+        html.append("<div class='card mb-4'><div class='card-header fw-semibold'>Create New Event</div><div class='card-body'>")
+                .append("<form method='POST' action='/admin/tournaments' class='row g-3'>")
+                .append("<div class='col-md-4'><label class='form-label'>Event Name</label><input class='form-control' name='eventName' required></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Date</label><input type='date' class='form-control' name='eventDate'></div>")
+                .append("<div class='col-md-3'><label class='form-label'>Location</label><input class='form-control' name='location'></div>")
+                .append("<div class='col-md-1'><label class='form-label'>Status</label><select class='form-select' name='status'>")
+                .append("<option>Upcoming</option><option>Open</option><option>Live</option><option>Completed</option>")
+                .append("</select></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Format</label><select class='form-select' name='format'>")
+                .append("<option value='MATCHES'>Matches</option>")
+                .append("</select></div>")
+                .append("<div class='col-12'><label class='form-label fw-semibold'>Allowed Martial Arts</label><div class='d-flex flex-wrap gap-3'>");
 
-        html.append("Event Name: <input name='eventName'><br>");
-        html.append("Date: <input type='date' name='eventDate'><br>");
-        html.append("Location: <input name='location'><br>");
+        String[] arts = {"MMA","Boxing","Kickboxing","Muay Thai","Jiu Jitsu","Wrestling"};
+        for (String art : arts) {
+            html.append("<div class='form-check'><input class='form-check-input' type='checkbox' value='").append(art).append("' onchange='updateArts()'><label class='form-check-label'>").append(art).append("</label></div>");
+        }
+        html.append("</div><input type='hidden' id='allowedMartialArts' name='allowedMartialArts'></div>")
+                .append("<div class='col-12'><button class='btn btn-primary' type='submit'><i class='bi bi-plus-circle me-1'></i>Create Event</button></div>")
+                .append("</form></div></div>");
 
-        html.append("Status: <select name='status'>");
-        html.append("<option value='Upcoming'>Upcoming</option>");
-        html.append("<option value='Open'>Open</option>");
-        html.append("<option value='Live'>Live</option>");
-        html.append("<option value='Completed'>Completed</option>");
-        html.append("</select><br>");
+        html.append("<script>function updateArts(){const checked=document.querySelectorAll(\"input[type='checkbox']:checked\");document.getElementById('allowedMartialArts').value=Array.from(checked).map(c=>c.value).join(',');}</script>");
 
-        html.append("Format: <select name='format'>");
-        html.append("<option value='MATCHES'>Matches</option>");
-        html.append("</select><br>");
-
-        html.append("<p>Allowed Martial Arts:</p>");
-
-        html.append("<label><input type='checkbox' value='MMA' onchange='updateArts()'> MMA</label><br>");
-        html.append("<label><input type='checkbox' value='Boxing' onchange='updateArts()'> Boxing</label><br>");
-        html.append("<label><input type='checkbox' value='Kickboxing' onchange='updateArts()'> Kickboxing</label><br>");
-        html.append("<label><input type='checkbox' value='Muay Thai' onchange='updateArts()'> Muay Thai</label><br>");
-        html.append("<label><input type='checkbox' value='Jiu Jitsu' onchange='updateArts()'> Jiu Jitsu</label><br>");
-        html.append("<label><input type='checkbox' value='Wrestling' onchange='updateArts()'> Wrestling</label><br>");
-
-        html.append("<input type='hidden' id='allowedMartialArts' name='allowedMartialArts'>");
-
-        html.append("<br><button type='submit'>Create Event</button>");
-        html.append("</form><br>");
-
-        html.append("<script>");
-        html.append("function updateArts(){");
-        html.append("  const checked = document.querySelectorAll(\"input[type='checkbox']:checked\");");
-        html.append("  const values = Array.from(checked).map(cb => cb.value);");
-        html.append("  document.getElementById('allowedMartialArts').value = values.join(',');");
-        html.append("}");
-        html.append("</script>");
-
-        html.append("<h2>Existing Events</h2>");
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>ID</th>");
-        html.append("<th>Name</th>");
-        html.append("<th>Date</th>");
-        html.append("<th>Location</th>");
-        html.append("<th>Status</th>");
-        html.append("<th>Format</th>");
-        html.append("<th>Allowed Martial Arts</th>");
-        html.append("<th>Actions</th>");
-        html.append("</tr>");
+        // Events table
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Date</th><th>Location</th><th>Status</th><th>Martial Arts</th><th>Actions</th></tr></thead><tbody>");
 
         for (Event e : events) {
-            html.append("<tr>");
-            html.append("<td>").append(e.getEventId()).append("</td>");
-            html.append("<td>").append(e.getEventName()).append("</td>");
-            html.append("<td>").append(e.getEventDate()).append("</td>");
-            html.append("<td>").append(e.getLocation()).append("</td>");
-            html.append("<td>").append(e.getStatus()).append("</td>");
-            html.append("<td>").append(e.getFormat()).append("</td>");
-            html.append("<td>").append(e.getAllowedMartialArts()).append("</td>");
+            String statusClass = "bg-secondary";
+            if ("Live".equals(e.getStatus())) statusClass = "bg-danger";
+            else if ("Open".equals(e.getStatus())) statusClass = "bg-success";
+            else if ("Completed".equals(e.getStatus())) statusClass = "bg-dark";
 
-            html.append("<td>");
-            html.append("<a href='/admin/edit-tournament?eventId=").append(e.getEventId()).append("'>Edit</a> ");
-            html.append("<a href='/admin/view-entrants?eventId=").append(e.getEventId()).append("'>Entrants</a> ");
-            html.append("<a href='/admin/view-matches?eventId=").append(e.getEventId()).append("'>Matches</a> ");
-            html.append("<a href='/admin/event-results?eventId=").append(e.getEventId()).append("'>Live Results</a> ");
-            html.append("<a href='/admin/live-control?eventId=").append(e.getEventId()).append("'>Live Controls</a> ");
-
-            html.append("<form method='POST' action='/admin/start-event' style='display:inline;'>");
-            html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
-            html.append("<button type='submit'>Start Event</button>");
-            html.append("</form> ");
-
-
-            html.append("<form method='POST' action='/admin/delete-tournament' style='display:inline;'>");
-            html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
-
-            html.append("</td>");
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>").append(e.getEventId()).append("</td>")
+                    .append("<td class='fw-semibold'>").append(e.getEventName()).append("</td>")
+                    .append("<td>").append(e.getEventDate()).append("</td>")
+                    .append("<td>").append(e.getLocation()).append("</td>")
+                    .append("<td><span class='badge ").append(statusClass).append("'>").append(e.getStatus()).append("</span></td>")
+                    .append("<td>").append(e.getAllowedMartialArts() == null ? "" : e.getAllowedMartialArts()).append("</td>")
+                    .append("<td>")
+                    .append("<div class='d-flex flex-wrap gap-1'>")
+                    .append("<a href='/admin/edit-tournament?eventId=").append(e.getEventId()).append("' class='btn btn-sm btn-outline-primary'>Edit</a>")
+                    .append("<a href='/admin/view-entrants?eventId=").append(e.getEventId()).append("' class='btn btn-sm btn-outline-secondary'>Entrants</a>")
+                    .append("<a href='/admin/view-matches?eventId=").append(e.getEventId()).append("' class='btn btn-sm btn-outline-secondary'>Matches</a>")
+                    .append("<a href='/admin/event-results?eventId=").append(e.getEventId()).append("' class='btn btn-sm btn-outline-info'>Results</a>")
+                    .append("<a href='/admin/live-control?eventId=").append(e.getEventId()).append("' class='btn btn-sm btn-danger'>Live</a>")
+                    .append("<form method='POST' action='/admin/start-event' style='display:inline;'>")
+                    .append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>")
+                    .append("<button class='btn btn-sm btn-success' type='submit'>Start</button>")
+                    .append("</form>")
+                    .append("<form method='POST' action='/admin/delete-tournament' style='display:inline;'>")
+                    .append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>")
+                    .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete event?\")'>Delete</button>")
+                    .append("</form>")
+                    .append("</div></td></tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back to Dashboard</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -842,95 +706,70 @@ public class AdminController {
     public String getEditTournamentPage(int eventId) {
 
         Event event = eventService.getEventById(eventId);
-
         String allowed = event.getAllowedMartialArts() == null ? "" : event.getAllowedMartialArts();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Edit Event", "Events"));
 
-        html.append("<html><body>");
-        html.append("<h1>Edit Tournament</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-pencil me-2'></i>Edit Event</h2></div>");
 
-        html.append("<form method='POST' action='/admin/edit-tournament'>");
-        html.append("<input type='hidden' name='eventId' value='").append(event.getEventId()).append("'>");
+        html.append("<div class='card' style='max-width:700px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/edit-tournament' class='row g-3'>")
+                .append("<input type='hidden' name='eventId' value='").append(event.getEventId()).append("'>")
+                .append("<div class='col-md-6'><label class='form-label'>Event Name</label><input class='form-control' name='eventName' value='").append(event.getEventName()).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Date</label><input type='date' class='form-control' name='eventDate' value='").append(event.getEventDate()).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Location</label><input class='form-control' name='location' value='").append(event.getLocation()).append("'></div>")
+                .append("<div class='col-md-3'><label class='form-label'>Status</label><select class='form-select' name='status'>");
 
-        html.append("Event Name: <input name='eventName' value='").append(event.getEventName()).append("'><br>");
-        html.append("Date: <input type='date' name='eventDate' value='").append(event.getEventDate()).append("'><br>");
-        html.append("Location: <input name='location' value='").append(event.getLocation()).append("'><br>");
+        for (String s : new String[]{"Upcoming","Open","Closed","Completed"}) {
+            html.append("<option value='").append(s).append("'").append(s.equals(event.getStatus()) ? " selected" : "").append(">").append(s).append("</option>");
+        }
+        html.append("</select></div>")
+                .append("<div class='col-md-3'><label class='form-label'>Format</label><select class='form-select' name='format'>")
+                .append("<option value='MATCHES'").append("MATCHES".equals(event.getFormat()) ? " selected" : "").append(">Matches</option>")
+                .append("<option value='BRACKET'").append("BRACKET".equals(event.getFormat()) ? " selected" : "").append(">Bracket</option>")
+                .append("</select></div>")
+                .append("<div class='col-12'><label class='form-label'>Allowed Martial Arts (comma separated)</label>")
+                .append("<input class='form-control' name='allowedMartialArts' value='").append(allowed).append("'></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Update</button>")
+                .append("<a href='/admin/tournaments' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        html.append("Status: <select name='status'>");
-
-        html.append("<option value='Upcoming'");
-        if ("Upcoming".equals(event.getStatus())) html.append(" selected");
-        html.append(">Upcoming</option>");
-
-        html.append("<option value='Open'");
-        if ("Open".equals(event.getStatus())) html.append(" selected");
-        html.append(">Open</option>");
-
-        html.append("<option value='Closed'");
-        if ("Closed".equals(event.getStatus())) html.append(" selected");
-        html.append(">Closed</option>");
-
-        html.append("<option value='Completed'");
-        if ("Completed".equals(event.getStatus())) html.append(" selected");
-        html.append(">Completed</option>");
-
-        html.append("</select><br>");
-
-        html.append("Format: <select name='format'>");
-        html.append("<option value='MATCHES'");
-        if ("MATCHES".equals(event.getFormat())) html.append(" selected");
-        html.append(">Matches</option>");
-
-        html.append("<option value='BRACKET'");
-        if ("BRACKET".equals(event.getFormat())) html.append(" selected");
-        html.append(">Bracket</option>");
-        html.append("</select><br>");
-
-        html.append("Allowed Martial Arts (comma separated): ");
-        html.append("<input name='allowedMartialArts' value='").append(allowed).append("'><br>");
-
-        html.append("<button type='submit'>Update Event</button>");
-        html.append("</form>");
-
-        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
+
+    /*
+    ENTRANTS PAGE
+    */
 
     public String getEntrantsPage(int eventId) {
 
         Event event = eventService.getEventById(eventId);
         List<MemberProfile> entrants = eventService.getEntrantsForEvent(eventId);
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Entrants", "Events"));
 
-        html.append("<html><body>");
-        html.append("<h1>Entrants for ").append(event.getEventName()).append("</h1>");
+        html.append("<div class='page-header d-flex justify-content-between align-items-center'>")
+                .append("<h2><i class='bi bi-people me-2'></i>Entrants — ").append(event.getEventName()).append("</h2>")
+                .append("<a href='/admin/tournaments' class='btn btn-secondary'><i class='bi bi-arrow-left me-1'></i>Back</a>")
+                .append("</div>");
 
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>ID</th>");
-        html.append("<th>Name</th>");
-        html.append("<th>Age</th>");
-        html.append("<th>Weight</th>");
-        html.append("</tr>");
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Weight</th></tr></thead><tbody>");
 
         for (MemberProfile m : entrants) {
-            html.append("<tr>");
-            html.append("<td>").append(m.getMemberId()).append("</td>");
-            html.append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>");
-            html.append("<td>").append(m.getAge()).append("</td>");
-            html.append("<td>").append(m.getWeightKg()).append(" kg</td>");
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>").append(m.getMemberId()).append("</td>")
+                    .append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>")
+                    .append("<td>").append(m.getAge()).append("</td>")
+                    .append("<td>").append(m.getWeightKg()).append(" kg</td>")
+                    .append("</tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -938,106 +777,96 @@ public class AdminController {
         matchmakingService.generateMatchesForEvent(eventId);
     }
 
+    /*
+     MATCHES PAGE
+    */
+
     public String getMatchesPage(int eventId) {
 
         Event event = eventService.getEventById(eventId);
         List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
-
-        StringBuilder html = new StringBuilder();
-
-        html.append("<html><body>");
-        html.append("<h1>Matches for ").append(event.getEventName()).append("</h1>");
-
         List<String> matchMessages = matchmakingService.getLastGenerationMessages();
 
+        StringBuilder html = new StringBuilder(pageStart("Matches", "Events"));
+
+        html.append("<div class='page-header d-flex justify-content-between align-items-center'>")
+                .append("<h2><i class='bi bi-diagram-3 me-2'></i>Matches — ").append(event.getEventName()).append("</h2>")
+                .append("<div class='d-flex gap-2'>")
+                .append("<form method='POST' action='/admin/generate-matches' style='display:inline;'>")
+                .append("<input type='hidden' name='eventId' value='").append(eventId).append("'>")
+                .append("<button class='btn btn-success' type='submit'><i class='bi bi-magic me-1'></i>Generate Matches</button>")
+                .append("</form>")
+                .append("<a href='/admin/tournaments' class='btn btn-secondary'><i class='bi bi-arrow-left me-1'></i>Back</a>")
+                .append("</div></div>");
+
         if (!matchMessages.isEmpty()) {
-            html.append("<h2>Generation Messages</h2>");
-            html.append("<ul>");
-            for (String msg : matchMessages) {
-                html.append("<li>").append(msg).append("</li>");
-            }
-            html.append("</ul>");
+            html.append("<div class='alert alert-info'><strong>Matchmaking Log:</strong><ul class='mb-0 mt-1'>");
+            for (String msg : matchMessages) html.append("<li>").append(msg).append("</li>");
+            html.append("</ul></div>");
         }
 
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Match ID</th>");
-        html.append("<th>Participant 1</th>");
-        html.append("<th>Participant 2</th>");
-        html.append("<th>Status</th>");
-        html.append("<th>Round</th>");
-        html.append("</tr>");
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>Match</th><th>Participant 1</th><th>Participant 2</th><th>Status</th><th>Round</th></tr></thead><tbody>");
 
         for (Match m : matches) {
-            html.append("<tr>");
-            html.append("<td>").append(m.getMatchId()).append("</td>");
-            html.append("<td>").append(m.getParticipant1Name()).append("</td>");
-            html.append("<td>").append(m.getParticipant2Name()).append("</td>");
-            html.append("<td>").append(m.getStatus()).append("</td>");
-            html.append("<td>").append(m.getRoundNumber()).append("</td>");
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>#").append(m.getMatchId()).append("</td>")
+                    .append("<td>").append(m.getParticipant1Name()).append("</td>")
+                    .append("<td>").append(m.getParticipant2Name()).append("</td>")
+                    .append("<td><span class='badge bg-secondary'>").append(m.getStatus()).append("</span></td>")
+                    .append("<td>").append(m.getRoundNumber()).append("</td>")
+                    .append("</tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br>");
-        html.append("<form method='POST' action='/admin/generate-matches'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("<button type='submit'>Generate Matches</button>");
-        html.append("</form>");
-
-        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
+
+    /*
+     EVENT RESULTS PAGE
+    */
 
     public String getAdminEventResultsPage(int eventId) {
 
         Event event = eventService.getEventById(eventId);
         List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Event Results", "Events"));
 
-        html.append("<html><body>");
-        html.append("<h1>Event Results - ").append(event.getEventName()).append("</h1>");
+        html.append("<div class='page-header d-flex justify-content-between align-items-center'>")
+                .append("<h2><i class='bi bi-bar-chart me-2'></i>Results — ").append(event.getEventName()).append("</h2>")
+                .append("<a href='/admin/tournaments' class='btn btn-secondary'><i class='bi bi-arrow-left me-1'></i>Back</a>")
+                .append("</div>");
 
-        html.append("<h2>Matches</h2>");
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Match ID</th>");
-        html.append("<th>Participant 1</th>");
-        html.append("<th>Participant 2</th>");
-        html.append("<th>Status</th>");
-        html.append("<th>Round</th>");
-        html.append("<th>Winner</th>");
-        html.append("<th>Decision</th>");
-        html.append("<th>Actions</th>");
-        html.append("</tr>");
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>Match</th><th>Participant 1</th><th>Participant 2</th><th>Status</th><th>Round</th><th>Winner</th><th>Decision</th><th>Control</th></tr></thead><tbody>");
 
         for (Match m : matches) {
-            html.append("<tr>");
-            html.append("<td>").append(m.getMatchId()).append("</td>");
-            html.append("<td>").append(m.getParticipant1Name()).append("</td>");
-            html.append("<td>").append(m.getParticipant2Name()).append("</td>");
-            html.append("<td>").append(m.getStatus()).append("</td>");
-            html.append("<td>").append(m.getRoundNumber()).append("</td>");
-            html.append("<td>").append(m.getWinnerName() == null ? "-" : m.getWinnerName()).append("</td>");
-            html.append("<td>").append(m.getResult() == null || m.getResult().isBlank() ? "-" : m.getResult()).append("</td>");
+            String statusClass = "Live".equals(m.getStatus()) ? "bg-danger" : "Completed".equals(m.getStatus()) ? "bg-dark" : "bg-secondary";
 
-            html.append("<td>");
-            html.append("<a href='/admin/live-control?eventId=").append(eventId).append("&matchId=").append(m.getMatchId()).append("'>Control</a>");
-            html.append("</td>");
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>#").append(m.getMatchId()).append("</td>")
+                    .append("<td>").append(m.getParticipant1Name()).append("</td>")
+                    .append("<td>").append(m.getParticipant2Name()).append("</td>")
+                    .append("<td><span class='badge ").append(statusClass).append("'>").append(m.getStatus()).append("</span></td>")
+                    .append("<td>").append(m.getRoundNumber()).append("</td>")
+                    .append("<td>").append(m.getWinnerName() == null ? "<span class='text-muted'>-</span>" : "<strong>" + m.getWinnerName() + "</strong>").append("</td>")
+                    .append("<td>").append(m.getResult() == null || m.getResult().isBlank() ? "<span class='text-muted'>-</span>" : m.getResult()).append("</td>")
+                    .append("<td><a href='/admin/live-control?eventId=").append(eventId).append("&matchId=").append(m.getMatchId()).append("' class='btn btn-sm btn-danger'>Control</a></td>")
+                    .append("</tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin/tournaments'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
+
+    /*
+    LIVE CONTROL PAGE
+    */
 
     public String getAdminLiveControlPage(int eventId, Integer selectedMatchId) {
 
@@ -1050,121 +879,115 @@ public class AdminController {
             state = liveEventService.getStateForEvent(eventId);
         }
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Live Control", "Events"));
 
-        html.append("<html><body>");
-        html.append("<h1>Live Control - ").append(event.getEventName()).append("</h1>");
-
+        // Auto-refresh tick when timer running
         if (state.isTimerRunning()) {
-            html.append("<meta http-equiv='refresh' content='1;url=/admin/live-control/tick-and-return?eventId=")
-                    .append(eventId)
-                    .append("'>");
+            html.append("<meta http-equiv='refresh' content='1;url=/admin/live-control/tick-and-return?eventId=").append(eventId).append("'>");
         }
 
-        html.append("<p><strong>Current Round:</strong> ").append(state.getCurrentRound()).append("</p>");
-        html.append("<p><strong>Timer:</strong> ").append(formatSeconds(state.getRemainingSeconds())).append("</p>");
-        html.append("<p><strong>Running:</strong> ").append(state.isTimerRunning() ? "Yes" : "No").append("</p>");
+        html.append("<div class='page-header d-flex justify-content-between align-items-center'>")
+                .append("<h2><i class='bi bi-broadcast me-2'></i>Live Control — ").append(event.getEventName()).append("</h2>")
+                .append("<a href='/admin/event-results?eventId=").append(eventId).append("' class='btn btn-secondary'><i class='bi bi-arrow-left me-1'></i>Back to Results</a>")
+                .append("</div>");
 
-        html.append("<h2>Select Current Match</h2>");
-        html.append("<form method='POST' action='/admin/live-control/select-match'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("<select name='matchId'>");
+        // Timer display card
+        String timerColor = state.isTimerRunning() ? "bg-danger" : "bg-dark";
+        html.append("<div class='row g-3 mb-4'>")
+                .append("<div class='col-md-4'>")
+                .append("<div class='card text-white ").append(timerColor).append(" text-center'>")
+                .append("<div class='card-body'>")
+                .append("<div style='font-size:3.5rem;font-weight:700;letter-spacing:4px'>").append(formatSeconds(state.getRemainingSeconds())).append("</div>")
+                .append("<div class='mt-1'>Round <strong>").append(state.getCurrentRound()).append("</strong> &nbsp;|&nbsp; ")
+                .append(state.isTimerRunning() ? "<span class='badge bg-light text-danger'>LIVE</span>" : "<span class='badge bg-light text-dark'>PAUSED</span>")
+                .append("</div></div></div></div>")
+
+                // Timer controls
+                .append("<div class='col-md-8 d-flex flex-column justify-content-center gap-2'>")
+                .append("<div class='d-flex gap-2 flex-wrap'>")
+                .append(postBtn("/admin/live-control/start", eventId, "btn-success", "bi-play-fill", "Start"))
+                .append(postBtn("/admin/live-control/pause", eventId, "btn-warning", "bi-pause-fill", "Pause"))
+                .append(postBtn("/admin/live-control/reset", eventId, "btn-secondary", "bi-arrow-counterclockwise", "Reset"))
+                .append(postBtn("/admin/live-control/tick",  eventId, "btn-outline-dark", "bi-skip-backward", "Tick -1s"))
+                .append("</div>")
+
+                .append("<form method='POST' action='/admin/live-control/set-round' class='d-flex gap-2 align-items-center'>")
+                .append("<input type='hidden' name='eventId' value='").append(eventId).append("'>")
+                .append("<label class='form-label mb-0'>Round:</label>")
+                .append("<input type='number' class='form-control' style='width:80px' name='round' value='").append(state.getCurrentRound()).append("'>")
+                .append("<button class='btn btn-outline-primary' type='submit'>Set Round</button>")
+                .append("</form>")
+
+                .append("<form method='POST' action='/admin/live-control/set-round-time' class='d-flex gap-2 align-items-center'>")
+                .append("<input type='hidden' name='eventId' value='").append(eventId).append("'>")
+                .append("<label class='form-label mb-0'>Round Time (s):</label>")
+                .append("<input type='number' class='form-control' style='width:100px' name='roundTimeSeconds' value='").append(state.getRoundTimeSeconds()).append("'>")
+                .append("<button class='btn btn-outline-primary' type='submit'>Set Time</button>")
+                .append("</form>")
+                .append("</div></div>");
+
+        // Select current match
+        html.append("<div class='card mb-4'><div class='card-header fw-semibold'>Select Current Match</div><div class='card-body'>")
+                .append("<form method='POST' action='/admin/live-control/select-match' class='d-flex gap-2 align-items-center'>")
+                .append("<input type='hidden' name='eventId' value='").append(eventId).append("'>")
+                .append("<select class='form-select' name='matchId'>");
 
         for (Match m : matches) {
-            html.append("<option value='").append(m.getMatchId()).append("'");
-            if (state.getCurrentMatchId() != null && state.getCurrentMatchId() == m.getMatchId()) {
-                html.append(" selected");
-            }
-            html.append(">");
-            html.append("Match ").append(m.getMatchId()).append(": ")
-                    .append(m.getParticipant1Name()).append(" vs ")
-                    .append(m.getParticipant2Name());
-            html.append("</option>");
+            boolean sel = state.getCurrentMatchId() != null && state.getCurrentMatchId() == m.getMatchId();
+            html.append("<option value='").append(m.getMatchId()).append("'").append(sel ? " selected" : "").append(">")
+                    .append("Match #").append(m.getMatchId()).append(": ").append(m.getParticipant1Name()).append(" vs ").append(m.getParticipant2Name())
+                    .append("</option>");
         }
 
-        html.append("</select>");
-        html.append("<button type='submit'>Set Current Match</button>");
-        html.append("</form>");
+        html.append("</select><button class='btn btn-primary' type='submit'>Set Match</button></form></div></div>");
 
-        html.append("<h2>Round / Timer Controls</h2>");
-
-        html.append("<form method='POST' action='/admin/live-control/set-round'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("Round: <input type='number' name='round' value='").append(state.getCurrentRound()).append("'>");
-        html.append("<button type='submit'>Update Round</button>");
-        html.append("</form><br>");
-
-        html.append("<form method='POST' action='/admin/live-control/set-round-time'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("Round Time (seconds): <input type='number' name='roundTimeSeconds' value='").append(state.getRoundTimeSeconds()).append("'>");
-        html.append("<button type='submit'>Set Round Time</button>");
-        html.append("</form><br>");
-
-        html.append("<form method='POST' action='/admin/live-control/start' style='display:inline;'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("<button type='submit'>Start</button>");
-        html.append("</form> ");
-
-        html.append("<form method='POST' action='/admin/live-control/pause' style='display:inline;'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("<button type='submit'>Pause</button>");
-        html.append("</form> ");
-
-        html.append("<form method='POST' action='/admin/live-control/reset' style='display:inline;'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("<button type='submit'>Reset</button>");
-        html.append("</form> ");
-
-        html.append("<form method='POST' action='/admin/live-control/tick' style='display:inline;'>");
-        html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-        html.append("<button type='submit'>Tick -1s</button>");
-        html.append("</form>");
-
+        // Result entry
         if (state.getCurrentMatchId() != null) {
             Match currentMatch = null;
             for (Match m : matches) {
-                if (m.getMatchId() == state.getCurrentMatchId()) {
-                    currentMatch = m;
-                    break;
-                }
+                if (m.getMatchId() == state.getCurrentMatchId()) { currentMatch = m; break; }
             }
 
             if (currentMatch != null) {
-                html.append("<h2>Result Entry</h2>");
-                html.append("<form method='POST' action='/admin/live-control/result'>");
-                html.append("<input type='hidden' name='eventId' value='").append(eventId).append("'>");
-                html.append("<input type='hidden' name='matchId' value='").append(currentMatch.getMatchId()).append("'>");
+                html.append("<div class='card'><div class='card-header fw-semibold'>Enter Result — Match #").append(currentMatch.getMatchId()).append("</div>")
+                        .append("<div class='card-body'>")
+                        .append("<form method='POST' action='/admin/live-control/result' class='row g-3'>")
+                        .append("<input type='hidden' name='eventId' value='").append(eventId).append("'>")
+                        .append("<input type='hidden' name='matchId' value='").append(currentMatch.getMatchId()).append("'>")
 
-                html.append("Status: <select name='status'>");
-                html.append("<option value='Scheduled'>Scheduled</option>");
-                html.append("<option value='Live'>Live</option>");
-                html.append("<option value='Completed'>Completed</option>");
-                html.append("</select><br>");
+                        .append("<div class='col-md-3'><label class='form-label'>Status</label><select class='form-select' name='status'>")
+                        .append("<option value='Scheduled'>Scheduled</option><option value='Live'>Live</option><option value='Completed'>Completed</option>")
+                        .append("</select></div>")
 
-                html.append("Winner: <select name='winnerMemberId'>");
-                html.append("<option value=''>No winner / Draw</option>");
-                html.append("<option value='").append(currentMatch.getParticipant1Id()).append("'>").append(currentMatch.getParticipant1Name()).append("</option>");
-                html.append("<option value='").append(currentMatch.getParticipant2Id()).append("'>").append(currentMatch.getParticipant2Name()).append("</option>");
-                html.append("</select><br>");
+                        .append("<div class='col-md-3'><label class='form-label'>Winner</label><select class='form-select' name='winnerMemberId'>")
+                        .append("<option value=''>No winner / Draw</option>")
+                        .append("<option value='").append(currentMatch.getParticipant1Id()).append("'>").append(currentMatch.getParticipant1Name()).append("</option>")
+                        .append("<option value='").append(currentMatch.getParticipant2Id()).append("'>").append(currentMatch.getParticipant2Name()).append("</option>")
+                        .append("</select></div>")
 
-                html.append("Decision: <select name='result'>");
-                html.append("<option value='Decision'>Decision</option>");
-                html.append("<option value='KO/TKO'>KO/TKO</option>");
-                html.append("<option value='Submission'>Submission</option>");
-                html.append("<option value='Draw'>Draw</option>");
-                html.append("</select><br>");
+                        .append("<div class='col-md-3'><label class='form-label'>Decision</label><select class='form-select' name='result'>")
+                        .append("<option value='Decision'>Decision</option><option value='KO/TKO'>KO/TKO</option>")
+                        .append("<option value='Submission'>Submission</option><option value='Draw'>Draw</option>")
+                        .append("</select></div>")
 
-                html.append("Round Number: <input type='number' name='roundNumber' value='").append(state.getCurrentRound()).append("'><br>");
+                        .append("<div class='col-md-2'><label class='form-label'>Round No.</label>")
+                        .append("<input type='number' class='form-control' name='roundNumber' value='").append(state.getCurrentRound()).append("'></div>")
 
-                html.append("<button type='submit'>Save Result</button>");
-                html.append("</form>");
+                        .append("<div class='col-12'>")
+                        .append("<button class='btn btn-success' type='submit'><i class='bi bi-check-lg me-1'></i>Save Result</button>")
+                        .append("</div></form></div></div>");
             }
         }
 
-        html.append("<br><button onclick=\"location.href='/admin/event-results?eventId=").append(eventId).append("'\">Back to Results</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
+    }
+
+    private String postBtn(String action, int eventId, String btnClass, String icon, String label) {
+        return "<form method='POST' action='" + action + "' style='display:inline;'>" +
+                "<input type='hidden' name='eventId' value='" + eventId + "'>" +
+                "<button class='btn " + btnClass + "' type='submit'>" +
+                "<i class='bi " + icon + " me-1'></i>" + label + "</button></form>";
     }
 
     private String formatSeconds(int totalSeconds) {
@@ -1173,149 +996,80 @@ public class AdminController {
         return String.format("%02d:%02d", minutes, seconds);
     }
 
-    public void setCurrentMatch(int eventId, int matchId) {
-        liveEventService.setCurrentMatch(eventId, matchId);
-    }
-
-    public void setCurrentRound(int eventId, int round) {
-        liveEventService.setRound(eventId, round);
-    }
-
-    public void setRoundTime(int eventId, int roundTimeSeconds) {
-        liveEventService.setRoundTime(eventId, roundTimeSeconds);
-    }
-
-    public void startLiveTimer(int eventId) {
-        liveEventService.startTimer(eventId);
-    }
-
-    public void pauseLiveTimer(int eventId) {
-        liveEventService.pauseTimer(eventId);
-    }
-
-    public void resetLiveTimer(int eventId) {
-        liveEventService.resetTimer(eventId);
-    }
-
-    public void tickLiveTimer(int eventId) {
-        liveEventService.tickTimer(eventId);
-    }
+    public void setCurrentMatch(int eventId, int matchId) { liveEventService.setCurrentMatch(eventId, matchId); }
+    public void setCurrentRound(int eventId, int round) { liveEventService.setRound(eventId, round); }
+    public void setRoundTime(int eventId, int roundTimeSeconds) { liveEventService.setRoundTime(eventId, roundTimeSeconds); }
+    public void startLiveTimer(int eventId) { liveEventService.startTimer(eventId); }
+    public void pauseLiveTimer(int eventId) { liveEventService.pauseTimer(eventId); }
+    public void resetLiveTimer(int eventId) { liveEventService.resetTimer(eventId); }
+    public void tickLiveTimer(int eventId) { liveEventService.tickTimer(eventId); }
 
     public void saveMatchResult(int matchId, String status, String result, Integer winnerMemberId, int roundNumber) {
         liveEventService.updateMatchResult(matchId, status, result, winnerMemberId, roundNumber);
     }
-
     public void startEvent(int eventId) {
         Event event = eventService.getEventById(eventId);
-
         if (event != null) {
-            eventService.updateEvent(
-                    eventId,
-                    event.getEventName(),
-                    event.getEventDate(),
-                    event.getLocation(),
-                    "Live",
-                    event.getFormat(),
-                    event.getAllowedMartialArts()
-            );
+            eventService.updateEvent(eventId, event.getEventName(), event.getEventDate(),
+                    event.getLocation(), "Live", event.getFormat(), event.getAllowedMartialArts());
         }
     }
 
-    private String escapeForJs(String input) {
-        return input
-                .replace("\\", "\\\\")
-                .replace("`", "\\`")
-                .replace("\n", "")
-                .replace("\r", "");
-    }
+    /*
+    MEMBERSHIPS PAGE
+    */
 
     public String getMembershipsPage() {
 
         List<Membership> memberships = membershipService.getAllMemberships();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Memberships", "Memberships"));
 
-        html.append("<html><body>");
-        html.append("<h1>Manage Memberships</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-card-checklist me-2'></i>Manage Memberships</h2></div>");
 
-        html.append("<h2>Create Membership</h2>");
-        html.append("<form method='POST' action='/admin/memberships'>");
+        html.append("<div class='card mb-4'><div class='card-header fw-semibold'>Create Membership</div><div class='card-body'>")
+                .append("<form method='POST' action='/admin/memberships' class='row g-3'>")
+                .append("<div class='col-md-4'><label class='form-label'>Membership Name</label><input class='form-control' name='membershipName' required></div>")
+                .append("<div class='col-md-4'><label class='form-label'>Description</label><input class='form-control' name='description'></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Allowed Martial Arts</label>")
+                .append("<select id='artsSelect' class='form-select' multiple size='6' onchange='syncArts()'>")
+                .append("<option value='MMA'>MMA</option><option value='Boxing'>Boxing</option>")
+                .append("<option value='Kickboxing'>Kickboxing</option><option value='Muay Thai'>Muay Thai</option>")
+                .append("<option value='Jiu Jitsu'>Jiu Jitsu</option><option value='Wrestling'>Wrestling</option>")
+                .append("</select><input type='hidden' id='allowedMartialArts' name='allowedMartialArts'></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Allowed Skill Levels</label>")
+                .append("<select id='skillsSelect' class='form-select' multiple size='2' onchange='syncSkills()'>")
+                .append("<option value='Beginner'>Beginner</option><option value='Intermediate/Advanced'>Intermediate/Advanced</option>")
+                .append("</select><input type='hidden' id='allowedSkillLevels' name='allowedSkillLevels'></div>")
+                .append("<div class='col-12'><button class='btn btn-primary' type='submit'><i class='bi bi-plus-circle me-1'></i>Create</button></div>")
+                .append("</form></div></div>");
 
-        html.append("Membership Name: <input name='membershipName'><br>");
-        html.append("Description: <input name='description'><br>");
+        html.append("<script>")
+                .append("function syncArts(){document.getElementById('allowedMartialArts').value=Array.from(document.getElementById('artsSelect').selectedOptions).map(o=>o.value).join(',');}")
+                .append("function syncSkills(){document.getElementById('allowedSkillLevels').value=Array.from(document.getElementById('skillsSelect').selectedOptions).map(o=>o.value).join(',');}")
+                .append("</script>");
 
-        html.append("<p>Allowed Martial Arts:</p>");
-        html.append("<select id='allowedMartialArtsSelect' multiple size='6' onchange='updateMembershipSelections()'>");
-        html.append("<option value='MMA'>MMA</option>");
-        html.append("<option value='Boxing'>Boxing</option>");
-        html.append("<option value='Kickboxing'>Kickboxing</option>");
-        html.append("<option value='Muay Thai'>Muay Thai</option>");
-        html.append("<option value='Jiu Jitsu'>Jiu Jitsu</option>");
-        html.append("<option value='Wrestling'>Wrestling</option>");
-        html.append("</select><br>");
-
-        html.append("<p>Allowed Skill Levels:</p>");
-        html.append("<select id='allowedSkillLevelsSelect' multiple size='3' onchange='updateMembershipSelections()'>");
-        html.append("<option value='Beginner'>Beginner</option>");
-        html.append("<option value='Intermediate/Advanced'>Intermediate/Advanced</option>");
-        html.append("</select><br>");
-
-        html.append("<input type='hidden' id='allowedMartialArts' name='allowedMartialArts'>");
-        html.append("<input type='hidden' id='allowedSkillLevels' name='allowedSkillLevels'>");
-
-        html.append("<button type='submit'>Create Membership</button>");
-        html.append("</form><br>");
-
-        html.append("<script>");
-        html.append("function updateMembershipSelections(){");
-
-        html.append("  const artsSelect = document.getElementById('allowedMartialArtsSelect');");
-        html.append("  const selectedArts = Array.from(artsSelect.selectedOptions).map(o => o.value);");
-        html.append("  document.getElementById('allowedMartialArts').value = selectedArts.join(',');");
-
-        html.append("  const skillsSelect = document.getElementById('allowedSkillLevelsSelect');");
-        html.append("  const selectedSkills = Array.from(skillsSelect.selectedOptions).map(o => o.value);");
-        html.append("  document.getElementById('allowedSkillLevels').value = selectedSkills.join(',');");
-
-        html.append("}");
-        html.append("</script>");
-
-        html.append("<h2>Existing Memberships</h2>");
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>ID</th>");
-        html.append("<th>Name</th>");
-        html.append("<th>Description</th>");
-        html.append("<th>Allowed Martial Arts</th>");
-        html.append("<th>Allowed Skill Levels</th>");
-        html.append("<th>Actions</th>");
-        html.append("</tr>");
+        html.append("<div class='card'><div class='card-body p-0'>")
+                .append("<table class='table table-hover mb-0'>")
+                .append("<thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Martial Arts</th><th>Skill Levels</th><th>Actions</th></tr></thead><tbody>");
 
         for (Membership m : memberships) {
-            html.append("<tr>");
-            html.append("<td>").append(m.getMembershipId()).append("</td>");
-            html.append("<td>").append(m.getMembershipName()).append("</td>");
-            html.append("<td>").append(m.getDescription()).append("</td>");
-            html.append("<td>").append(m.getAllowedMartialArts()).append("</td>");
-            html.append("<td>").append(m.getAllowedSkillLevels()).append("</td>");
-
-            html.append("<td>");
-            html.append("<a href='/admin/edit-membership?membershipId=").append(m.getMembershipId()).append("'>Edit</a> ");
-
-            html.append("<form method='POST' action='/admin/delete-membership' style='display:inline;'>");
-            html.append("<input type='hidden' name='membershipId' value='").append(m.getMembershipId()).append("'>");
-            html.append("<button type='submit'>Delete</button>");
-            html.append("</form>");
-            html.append("</td>");
-
-            html.append("</tr>");
+            html.append("<tr>")
+                    .append("<td>").append(m.getMembershipId()).append("</td>")
+                    .append("<td class='fw-semibold'>").append(m.getMembershipName()).append("</td>")
+                    .append("<td>").append(m.getDescription()).append("</td>")
+                    .append("<td>").append(m.getAllowedMartialArts()).append("</td>")
+                    .append("<td>").append(m.getAllowedSkillLevels()).append("</td>")
+                    .append("<td class='d-flex gap-2'>")
+                    .append("<a href='/admin/edit-membership?membershipId=").append(m.getMembershipId()).append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil me-1'></i>Edit</a>")
+                    .append("<form method='POST' action='/admin/delete-membership' style='display:inline;'>")
+                    .append("<input type='hidden' name='membershipId' value='").append(m.getMembershipId()).append("'>")
+                    .append("<button class='btn btn-sm btn-outline-danger' type='submit' onclick='return confirm(\"Delete membership?\")'><i class='bi bi-trash me-1'></i>Delete</button>")
+                    .append("</form></td></tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/admin-dashboard'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append("</tbody></table></div></div>");
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -1331,64 +1085,43 @@ public class AdminController {
     public String getEditMembershipPage(int membershipId) {
 
         Membership membership = membershipService.getMembershipById(membershipId);
-
-        String allowedArts = membership.getAllowedMartialArts() == null ? "" : membership.getAllowedMartialArts();
+        String allowedArts   = membership.getAllowedMartialArts() == null ? "" : membership.getAllowedMartialArts();
         String allowedSkills = membership.getAllowedSkillLevels() == null ? "" : membership.getAllowedSkillLevels();
 
-        StringBuilder html = new StringBuilder();
+        StringBuilder html = new StringBuilder(pageStart("Edit Membership", "Memberships"));
 
-        html.append("<html><body>");
-        html.append("<h1>Edit Membership</h1>");
+        html.append("<div class='page-header'><h2><i class='bi bi-pencil me-2'></i>Edit Membership</h2></div>");
 
-        html.append("<form method='POST' action='/admin/edit-membership'>");
-        html.append("<input type='hidden' name='membershipId' value='").append(membership.getMembershipId()).append("'>");
+        html.append("<div class='card' style='max-width:700px'><div class='card-body'>")
+                .append("<form method='POST' action='/admin/edit-membership' class='row g-3'>")
+                .append("<input type='hidden' name='membershipId' value='").append(membership.getMembershipId()).append("'>")
+                .append("<div class='col-md-6'><label class='form-label'>Name</label><input class='form-control' name='membershipName' value='").append(membership.getMembershipName()).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Description</label><input class='form-control' name='description' value='").append(membership.getDescription()).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Allowed Martial Arts</label>")
+                .append("<select id='artsSelect' class='form-select' multiple size='6' onchange='syncArts()'>");
 
-        html.append("Membership Name: <input name='membershipName' value='").append(membership.getMembershipName()).append("'><br>");
-        html.append("Description: <input name='description' value='").append(membership.getDescription()).append("'><br>");
+        for (String art : new String[]{"MMA","Boxing","Kickboxing","Muay Thai","Jiu Jitsu","Wrestling"}) {
+            html.append("<option value='").append(art).append("'").append(containsCsv(allowedArts, art) ? " selected" : "").append(">").append(art).append("</option>");
+        }
+        html.append("</select><input type='hidden' id='allowedMartialArts' name='allowedMartialArts' value='").append(allowedArts).append("'></div>")
+                .append("<div class='col-md-6'><label class='form-label'>Allowed Skill Levels</label>")
+                .append("<select id='skillsSelect' class='form-select' multiple size='2' onchange='syncSkills()'>");
 
-        html.append("<p>Allowed Martial Arts:</p>");
-        html.append("<select id='allowedMartialArtsSelect' multiple size='6' onchange='updateMembershipSelections()'>");
+        for (String sk : new String[]{"Beginner","Intermediate/Advanced"}) {
+            html.append("<option value='").append(sk).append("'").append(containsCsv(allowedSkills, sk) ? " selected" : "").append(">").append(sk).append("</option>");
+        }
+        html.append("</select><input type='hidden' id='allowedSkillLevels' name='allowedSkillLevels' value='").append(allowedSkills).append("'></div>")
+                .append("<div class='col-12 d-flex gap-2'>")
+                .append("<button class='btn btn-primary' type='submit'><i class='bi bi-check-lg me-1'></i>Update</button>")
+                .append("<a href='/admin/memberships' class='btn btn-secondary'>Cancel</a>")
+                .append("</div></form></div></div>");
 
-        appendSelectedOption(html, "MMA", allowedArts);
-        appendSelectedOption(html, "Boxing", allowedArts);
-        appendSelectedOption(html, "Kickboxing", allowedArts);
-        appendSelectedOption(html, "Muay Thai", allowedArts);
-        appendSelectedOption(html, "Jiu Jitsu", allowedArts);
-        appendSelectedOption(html, "Wrestling", allowedArts);
+        html.append("<script>")
+                .append("function syncArts(){document.getElementById('allowedMartialArts').value=Array.from(document.getElementById('artsSelect').selectedOptions).map(o=>o.value).join(',');}")
+                .append("function syncSkills(){document.getElementById('allowedSkillLevels').value=Array.from(document.getElementById('skillsSelect').selectedOptions).map(o=>o.value).join(',');}")
+                .append("</script>");
 
-        html.append("</select><br>");
-
-        html.append("<p>Allowed Skill Levels:</p>");
-        html.append("<select id='allowedSkillLevelsSelect' multiple size='2' onchange='updateMembershipSelections()'>");
-
-        appendSelectedOption(html, "Beginner", allowedSkills);
-        appendSelectedOption(html, "Intermediate/Advanced", allowedSkills);
-
-        html.append("</select><br>");
-
-        html.append("<input type='hidden' id='allowedMartialArts' name='allowedMartialArts' value='").append(allowedArts).append("'>");
-        html.append("<input type='hidden' id='allowedSkillLevels' name='allowedSkillLevels' value='").append(allowedSkills).append("'>");
-
-        html.append("<button type='submit'>Update Membership</button>");
-        html.append("</form>");
-
-        html.append("<script>");
-        html.append("function updateMembershipSelections(){");
-
-        html.append("  const artsSelect = document.getElementById('allowedMartialArtsSelect');");
-        html.append("  const selectedArts = Array.from(artsSelect.selectedOptions).map(o => o.value);");
-        html.append("  document.getElementById('allowedMartialArts').value = selectedArts.join(',');");
-
-        html.append("  const skillsSelect = document.getElementById('allowedSkillLevelsSelect');");
-        html.append("  const selectedSkills = Array.from(skillsSelect.selectedOptions).map(o => o.value);");
-        html.append("  document.getElementById('allowedSkillLevels').value = selectedSkills.join(',');");
-
-        html.append("}");
-        html.append("</script>");
-
-        html.append("<br><button onclick=\"location.href='/admin/memberships'\">Back</button>");
-        html.append("</body></html>");
-
+        html.append(pageEnd());
         return html.toString();
     }
 
@@ -1397,30 +1130,56 @@ public class AdminController {
         membershipService.updateMembership(membershipId, membershipName, description, allowedMartialArts, allowedSkillLevels);
     }
 
-    private void appendSelectedOption(StringBuilder html, String value, String csvValues) {
-        html.append("<option value='").append(value).append("'");
+    /*
+    PRIVATE HELPERS
+    */
 
-        if (containsCsvValue(csvValues, value)) {
-            html.append(" selected");
+    private String buildGeneratorConfigHtml(Object index, List<GymClass> classes,
+                                            List<Coach> coaches, List<Room> rooms) {
+        String idx = String.valueOf(index);
+        StringBuilder html = new StringBuilder();
+
+        html.append("<div class='card config-card mb-3'><div class='card-body row g-3'>")
+                .append("<div class='col-12 d-flex justify-content-between align-items-center'>")
+                .append("<span class='fw-semibold text-muted'>Configuration ").append(idx).append("</span>")
+                .append("<button type='button' class='btn btn-sm btn-outline-danger' onclick='removeConfig(this)'>Remove</button>")
+                .append("</div>")
+                .append("<div class='col-md-3'><label class='form-label'>Class</label><select class='form-select' name='classId_").append(idx).append("'>");
+        for (GymClass c : classes) {
+            html.append("<option value='").append(c.getClassId()).append("'>").append(c.getClassName()).append("</option>");
         }
+        html.append("</select></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Skill Level</label><select class='form-select' name='skillLevel_").append(idx).append("'>")
+                .append("<option value='Beginner'>Beginner</option><option value='Intermediate/Advanced'>Intermediate/Advanced</option>")
+                .append("</select></div>")
+                .append("<div class='col-md-1'><label class='form-label'>Sessions/week</label><input type='number' class='form-control' min='1' max='5' name='sessionsPerWeek_").append(idx).append("'></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Duration (min)</label><input type='number' class='form-control' min='30' step='30' name='durationMinutes_").append(idx).append("'></div>")
+                .append("<div class='col-md-1'><label class='form-label'>After</label><input type='time' class='form-control' name='afterTime_").append(idx).append("'></div>")
+                .append("<div class='col-md-1'><label class='form-label'>Before</label><input type='time' class='form-control' name='beforeTime_").append(idx).append("'></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Coach</label><select class='form-select' name='coachName_").append(idx).append("'>");
+        for (Coach c : coaches) {
+            html.append("<option value='").append(c.getName()).append("'>").append(c.getName()).append("</option>");
+        }
+        html.append("</select></div>")
+                .append("<div class='col-md-2'><label class='form-label'>Room</label><select class='form-select' name='roomName_").append(idx).append("'>");
+        for (Room r : rooms) {
+            html.append("<option value='").append(r.getName()).append("'>").append(r.getName()).append("</option>");
+        }
+        html.append("</select></div>")
+                .append("</div></div>");
 
-        html.append(">").append(value).append("</option>");
+        return html.toString();
     }
 
-    private boolean containsCsvValue(String csv, String value) {
-        if (csv == null || csv.isBlank()) {
-            return false;
+    private boolean containsCsv(String csv, String value) {
+        if (csv == null || csv.isBlank()) return false;
+        for (String part : csv.split(",")) {
+            if (part.trim().equalsIgnoreCase(value)) return true;
         }
-
-        String[] parts = csv.split(",");
-
-        for (String part : parts) {
-            if (part.trim().equalsIgnoreCase(value)) {
-                return true;
-            }
-        }
-
         return false;
     }
 
+    private String escapeForJs(String input) {
+        return input.replace("\\", "\\\\").replace("`", "\\`").replace("\n", "").replace("\r", "");
+    }
 }
