@@ -2,195 +2,162 @@ package uk.ac.city.mma.controller;
 
 import uk.ac.city.mma.model.*;
 import uk.ac.city.mma.service.*;
+import uk.ac.city.mma.util.TemplateEngine;
 
 import java.util.List;
 
 public class MemberController {
 
-    private MemberService memberService = new MemberService();
-    private EventService eventService = new EventService();
-    private LiveEventService liveEventService = new LiveEventService();
-    private MatchmakingService matchmakingService = new MatchmakingService();
-    private MembershipService membershipService = new MembershipService();
-    private ClassSessionService classSessionService = new ClassSessionService();
+    private MemberService memberService                                = new MemberService();
+    private EventService eventService                                  = new EventService();
+    private LiveEventService liveEventService                          = new LiveEventService();
+    private MatchmakingService matchmakingService                      = new MatchmakingService();
+    private MembershipService membershipService                        = new MembershipService();
+    private ClassSessionService classSessionService                    = new ClassSessionService();
     private ClassSessionRegistrationService sessionRegistrationService = new ClassSessionRegistrationService();
+
+    // -----------------------------------------------------------------------
+    // PROFILE
+    // -----------------------------------------------------------------------
 
     public String getProfilePage(int userId) {
 
         MemberProfile profile = memberService.getProfileByUserId(userId);
 
-        String firstName = "";
-        String lastName = "";
-        String age = "";
-        String heightCm = "";
-        String weightKg = "";
-
+        String firstName = "", lastName = "", age = "", heightCm = "", weightKg = "";
         if (profile != null) {
             firstName = safe(profile.getFirstName());
-            lastName = safe(profile.getLastName());
-            age = String.valueOf(profile.getAge());
-            heightCm = String.valueOf(profile.getHeightCm());
-            weightKg = String.valueOf(profile.getWeightKg());
+            lastName  = safe(profile.getLastName());
+            age       = String.valueOf(profile.getAge());
+            heightCm  = String.valueOf(profile.getHeightCm());
+            weightKg  = String.valueOf(profile.getWeightKg());
         }
 
-        StringBuilder html = new StringBuilder();
-
-        html.append("<html><body>");
-        html.append("<h1>My Profile</h1>");
-
-        html.append("<form method='POST' action='/member/profile'>");
-
-        html.append("First Name: <input name='firstName' value='").append(firstName).append("'><br>");
-        html.append("Last Name: <input name='lastName' value='").append(lastName).append("'><br>");
-        html.append("Age: <input type='number' name='age' value='").append(age).append("'><br>");
-        html.append("Height (cm): <input type='number' name='heightCm' value='").append(heightCm).append("'><br>");
-        html.append("Weight (kg): <input type='number' step='0.1' name='weightKg' value='").append(weightKg).append("'><br>");
-
-        html.append("<button type='submit'>Save Profile</button>");
-        html.append("</form>");
-
-        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
-        html.append("</body></html>");
-
-        return html.toString();
+        return TemplateEngine.load("member-layout.html", "content/member-profile.html")
+                .set("PAGE_TITLE",  "My Profile")
+                .set("NAV_PROFILE", "active")
+                .set("FIRST_NAME",  firstName)
+                .set("LAST_NAME",   lastName)
+                .set("AGE",         age)
+                .set("HEIGHT_CM",   heightCm)
+                .set("WEIGHT_KG",   weightKg)
+                .clearRemaining()
+                .render();
     }
 
     public void saveProfile(int userId, String firstName, String lastName,
                             int age, int heightCm, double weightKg) {
-
-        memberService.saveProfile(
-                userId,
-                firstName,
-                lastName,
-                age,
-                heightCm,
-                weightKg
-        );
+        memberService.saveProfile(userId, firstName, lastName, age, heightCm, weightKg);
     }
+
+    // -----------------------------------------------------------------------
+    // TIMETABLE
+    // -----------------------------------------------------------------------
 
     public String getTimetablePage(int memberId) {
 
         List<ClassSession> sessions = classSessionService.getAllSessions();
-        List<Integer> registeredSessionIds = sessionRegistrationService.getRegisteredSessionIdsForMember(memberId);
-        Membership membership = membershipService.getMembershipForMember(memberId);
+        List<Integer> registeredIds = sessionRegistrationService.getRegisteredSessionIdsForMember(memberId);
+        Membership membership       = membershipService.getMembershipForMember(memberId);
 
-        String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+        String[] days = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
 
-        StringBuilder html = new StringBuilder();
+        String membershipBadge = membership != null
+                ? "<span class='badge bg-primary fs-6'><i class='bi bi-card-checklist me-1'></i>"
+                + membership.getMembershipName() + "</span>"
+                : "";
 
-        html.append("<html><body>");
-        html.append("<h1>Weekly Timetable</h1>");
+        String membershipAlert = membership == null
+                ? "<div class='alert alert-warning d-flex align-items-center gap-3'>"
+                + "<i class='bi bi-exclamation-triangle-fill fs-4'></i>"
+                + "<div>You don't have a membership yet. "
+                + "<a href='/member/memberships' class='alert-link'>Choose a membership</a> "
+                + "to register for classes.</div></div>"
+                : "";
 
-        if (membership == null) {
-            html.append("<p style='color:red;'><strong>You do not have a membership. ")
-                    .append("Please select a membership before registering for classes.</strong></p>");
-            html.append("<button onclick=\"location.href='/member/memberships'\">Choose Membership</button><br><br>");
-        } else {
-            html.append("<p><strong>Your Membership:</strong> ").append(membership.getMembershipName()).append("</p>");
-        }
+        StringBuilder dayBlocks = new StringBuilder();
 
         for (String day : days) {
+            boolean hasDay = sessions.stream().anyMatch(s -> s.getDayOfWeek().equalsIgnoreCase(day));
+            if (!hasDay) continue;
 
-            boolean hasSessions = false;
-            for (ClassSession s : sessions) {
-                if (s.getDayOfWeek().equalsIgnoreCase(day)) {
-                    hasSessions = true;
-                    break;
-                }
-            }
-
-            if (!hasSessions) {
-                continue;
-            }
-
-            html.append("<h2>").append(day).append("</h2>");
-            html.append("<table border='1'>");
-            html.append("<tr>");
-            html.append("<th>Class</th>");
-            html.append("<th>Skill Level</th>");
-            html.append("<th>Start Time</th>");
-            html.append("<th>Duration</th>");
-            html.append("<th>Coach</th>");
-            html.append("<th>Room</th>");
-            html.append("<th>Spots Taken</th>");
-            html.append("<th>Action</th>");
-            html.append("</tr>");
+            dayBlocks.append("<h5 class='mt-4 mb-2 text-muted text-uppercase fw-bold' style='letter-spacing:1px'>")
+                    .append(day).append("</h5>")
+                    .append("<div class='card mb-3'><div class='card-body p-0'>")
+                    .append("<table class='table table-hover mb-0'>")
+                    .append("<thead><tr><th>Class</th><th>Skill Level</th><th>Time</th>")
+                    .append("<th>Duration</th><th>Coach</th><th>Room</th><th>Spots Taken</th><th>Action</th>")
+                    .append("</tr></thead><tbody>");
 
             for (ClassSession s : sessions) {
+                if (!s.getDayOfWeek().equalsIgnoreCase(day)) continue;
 
-                if (!s.getDayOfWeek().equalsIgnoreCase(day)) {
-                    continue;
-                }
+                boolean registered = registeredIds.contains(s.getSessionId());
+                int     spotsTaken = sessionRegistrationService.getRegistrationCount(s.getSessionId());
+                boolean allowed    = membership != null && isMembershipCompatible(membership, s);
 
-                boolean alreadyRegistered = registeredSessionIds.contains(s.getSessionId());
-                int spotsTaken = sessionRegistrationService.getRegistrationCount(s.getSessionId());
-                boolean allowed = membership != null && isMembershipCompatible(membership, s);
-
-                html.append("<tr>");
-                html.append("<td>").append(s.getClassName()).append("</td>");
-                html.append("<td>").append(s.getSkillLevel()).append("</td>");
-                html.append("<td>").append(s.getStartTime()).append("</td>");
-                html.append("<td>").append(s.getDurationMinutes()).append(" mins</td>");
-                html.append("<td>").append(s.getCoachName()).append("</td>");
-                html.append("<td>").append(s.getRoom()).append("</td>");
-                html.append("<td>").append(spotsTaken).append("</td>");
-
-                html.append("<td>");
-                if (alreadyRegistered) {
-                    html.append("<form method='POST' action='/member/timetable/unregister'>");
-                    html.append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>");
-                    html.append("<button type='submit'>Unregister</button>");
-                    html.append("</form>");
+                String actionCell;
+                if (registered) {
+                    actionCell =
+                            "<form method='POST' action='/member/timetable/unregister'>"
+                                    + "<input type='hidden' name='sessionId' value='" + s.getSessionId() + "'>"
+                                    + "<button class='btn btn-sm btn-outline-danger'>"
+                                    + "<i class='bi bi-x-circle me-1'></i>Unregister</button></form>";
                 } else if (!allowed) {
-                    html.append("<span style='color:grey;'>Not in your membership</span>");
+                    actionCell =
+                            "<span class='text-muted small'>"
+                                    + "<i class='bi bi-lock me-1'></i>Not in your membership</span>";
                 } else {
-                    html.append("<form method='POST' action='/member/timetable'>");
-                    html.append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>");
-                    html.append("<button type='submit'>Register</button>");
-                    html.append("</form>");
+                    actionCell =
+                            "<form method='POST' action='/member/timetable'>"
+                                    + "<input type='hidden' name='sessionId' value='" + s.getSessionId() + "'>"
+                                    + "<button class='btn btn-sm btn-primary'>"
+                                    + "<i class='bi bi-plus-circle me-1'></i>Register</button></form>";
                 }
-                html.append("</td>");
 
-                html.append("</tr>");
+                dayBlocks.append("<tr>")
+                        .append("<td class='fw-semibold'>").append(s.getClassName()).append("</td>")
+                        .append("<td><span class='badge bg-secondary'>").append(s.getSkillLevel()).append("</span></td>")
+                        .append("<td>").append(s.getStartTime()).append("</td>")
+                        .append("<td>").append(s.getDurationMinutes()).append(" mins</td>")
+                        .append("<td>").append(s.getCoachName()).append("</td>")
+                        .append("<td>").append(s.getRoom()).append("</td>")
+                        .append("<td>").append(spotsTaken).append("</td>")
+                        .append("<td>").append(actionCell).append("</td>")
+                        .append("</tr>");
             }
-
-            html.append("</table><br>");
+            dayBlocks.append("</tbody></table></div></div>");
         }
 
-        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
-        html.append("</body></html>");
-
-        return html.toString();
+        return TemplateEngine.load("member-layout.html", "content/member-timetable.html")
+                .set("PAGE_TITLE",       "Timetable")
+                .set("NAV_TIMETABLE",    "active")
+                .set("MEMBERSHIP_BADGE", membershipBadge)
+                .set("MEMBERSHIP_ALERT", membershipAlert)
+                .set("TIMETABLE_DAYS",   dayBlocks.toString())
+                .clearRemaining()
+                .render();
     }
 
     private boolean isMembershipCompatible(Membership membership, ClassSession session) {
-
         String allowedSkills = membership.getAllowedSkillLevels();
         String allowedArts   = membership.getAllowedMartialArts();
 
-        // Check skill level
         if (allowedSkills != null && !allowedSkills.isBlank()) {
-            boolean skillMatch = false;
+            boolean match = false;
             for (String s : allowedSkills.split(",")) {
-                if (s.trim().equalsIgnoreCase(session.getSkillLevel())) {
-                    skillMatch = true;
-                    break;
-                }
+                if (s.trim().equalsIgnoreCase(session.getSkillLevel())) { match = true; break; }
             }
-            if (!skillMatch) return false;
+            if (!match) return false;
         }
 
         if (allowedArts != null && !allowedArts.isBlank()) {
-            boolean artMatch = false;
+            boolean match = false;
             for (String a : allowedArts.split(",")) {
-                if (a.trim().equalsIgnoreCase(session.getClassName())) {
-                    artMatch = true;
-                    break;
-                }
+                if (a.trim().equalsIgnoreCase(session.getClassName())) { match = true; break; }
             }
-            if (!artMatch) return false;
+            if (!match) return false;
         }
-
         return true;
     }
 
@@ -202,221 +169,193 @@ public class MemberController {
         sessionRegistrationService.unregisterMemberFromSession(sessionId, memberId);
     }
 
+    // -----------------------------------------------------------------------
+    // EVENTS
+    // -----------------------------------------------------------------------
 
     public String getEventsPage(int memberId) {
 
-        List<Event> allEvents = eventService.getAllEvents();
-        List<Integer> registeredEventIds = eventService.getRegisteredEventIdsForMember(memberId);
+        List<Event> allEvents       = eventService.getAllEvents();
+        List<Integer> registeredIds = eventService.getRegisteredEventIdsForMember(memberId);
 
-        StringBuilder html = new StringBuilder();
-
-        html.append("<html><body>");
-        html.append("<h1>Events</h1>");
-
-        html.append("<h2>Upcoming Events</h2>");
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Name</th>");
-        html.append("<th>Date</th>");
-        html.append("<th>Location</th>");
-        html.append("<th>Status</th>");
-        html.append("<th>Allowed Martial Arts</th>");
-        html.append("<th>Register</th>");
-        html.append("</tr>");
+        StringBuilder availableRows = new StringBuilder();
+        StringBuilder myRows        = new StringBuilder();
 
         for (Event e : allEvents) {
-            if (registeredEventIds.contains(e.getEventId())) {
-                continue;
-            }
+            String sc = "bg-secondary";
+            if ("Open".equals(e.getStatus())) sc = "bg-success";
+            if ("Live".equals(e.getStatus())) sc = "bg-danger";
 
-            html.append("<tr>");
-            html.append("<td>").append(e.getEventName()).append("</td>");
-            html.append("<td>").append(e.getEventDate()).append("</td>");
-            html.append("<td>").append(e.getLocation()).append("</td>");
-            html.append("<td>").append(e.getStatus()).append("</td>");
-            html.append("<td>").append(e.getAllowedMartialArts() == null ? "" : e.getAllowedMartialArts()).append("</td>");
-
-            html.append("<td>");
-
-            if (e.getAllowedMartialArts() == null || e.getAllowedMartialArts().isBlank()) {
-                html.append("No martial arts configured");
-            } else {
-                html.append("<form method='POST' action='/member/events'>");
-                html.append("<input type='hidden' name='eventId' value='").append(e.getEventId()).append("'>");
-
-                html.append("Martial Art: <select name='chosenMartialArt'>");
-                String[] arts = e.getAllowedMartialArts().split(",");
-                for (String art : arts) {
-                    String trimmed = art.trim();
-                    if (!trimmed.isEmpty()) {
-                        html.append("<option value='").append(trimmed).append("'>")
-                                .append(trimmed)
-                                .append("</option>");
+            if (!registeredIds.contains(e.getEventId())) {
+                String registerCell;
+                if (e.getAllowedMartialArts() == null || e.getAllowedMartialArts().isBlank()) {
+                    registerCell = "<span class='text-muted small'>No martial arts configured</span>";
+                } else {
+                    StringBuilder form = new StringBuilder(
+                            "<form method='POST' action='/member/events'"
+                                    + " class='d-flex flex-wrap gap-2 align-items-center'>"
+                                    + "<input type='hidden' name='eventId' value='" + e.getEventId() + "'>"
+                                    + "<select class='form-select form-select-sm' name='chosenMartialArt' style='width:auto'>");
+                    for (String art : e.getAllowedMartialArts().split(",")) {
+                        String t = art.trim();
+                        if (!t.isEmpty()) form.append("<option value='").append(t).append("'>").append(t).append("</option>");
                     }
+                    form.append("</select>")
+                            .append("<select class='form-select form-select-sm' name='experienceLevel' style='width:auto'>")
+                            .append("<option value='Beginner'>Beginner</option>")
+                            .append("<option value='Intermediate'>Intermediate</option>")
+                            .append("<option value='Advanced'>Advanced</option>")
+                            .append("</select>")
+                            .append("<button class='btn btn-sm btn-primary' type='submit'>")
+                            .append("<i class='bi bi-plus-circle me-1'></i>Register</button></form>");
+                    registerCell = form.toString();
                 }
-                html.append("</select><br>");
 
-                html.append("Experience Level: <select name='experienceLevel'>");
-                html.append("<option value='Beginner'>Beginner</option>");
-                html.append("<option value='Intermediate'>Intermediate</option>");
-                html.append("<option value='Advanced'>Advanced</option>");
-                html.append("</select><br>");
-
-                html.append("<button type='submit'>Register</button>");
-                html.append("</form>");
+                availableRows.append("<tr>")
+                        .append("<td class='fw-semibold'>").append(e.getEventName()).append("</td>")
+                        .append("<td>").append(e.getEventDate()).append("</td>")
+                        .append("<td>").append(e.getLocation()).append("</td>")
+                        .append("<td><span class='badge ").append(sc).append("'>").append(e.getStatus()).append("</span></td>")
+                        .append("<td>").append(e.getAllowedMartialArts() == null ? "" : e.getAllowedMartialArts()).append("</td>")
+                        .append("<td>").append(registerCell).append("</td>")
+                        .append("</tr>");
+            } else {
+                myRows.append("<tr>")
+                        .append("<td class='fw-semibold'>").append(e.getEventName()).append("</td>")
+                        .append("<td>").append(e.getEventDate()).append("</td>")
+                        .append("<td>").append(e.getLocation()).append("</td>")
+                        .append("<td><span class='badge ").append(sc).append("'>").append(e.getStatus()).append("</span></td>")
+                        .append("<td><a href='/member/event-results?eventId=").append(e.getEventId())
+                        .append("' class='btn btn-sm btn-outline-primary'>")
+                        .append("<i class='bi bi-eye me-1'></i>View</a></td>")
+                        .append("</tr>");
             }
-
-            html.append("</td>");
-            html.append("</tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<h2>My Events</h2>");
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Name</th>");
-        html.append("<th>Date</th>");
-        html.append("<th>Location</th>");
-        html.append("<th>Status</th>");
-        html.append("<th>View</th>");
-        html.append("</tr>");
-
-        for (Event e : allEvents) {
-            if (!registeredEventIds.contains(e.getEventId())) {
-                continue;
-            }
-
-            html.append("<tr>");
-            html.append("<td>").append(e.getEventName()).append("</td>");
-            html.append("<td>").append(e.getEventDate()).append("</td>");
-            html.append("<td>").append(e.getLocation()).append("</td>");
-            html.append("<td>").append(e.getStatus()).append("</td>");
-            html.append("<td><a href='/member/event-results?eventId=").append(e.getEventId()).append("'>View Event</a></td>");
-            html.append("</tr>");
-        }
-
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
-        html.append("</body></html>");
-
-        return html.toString();
+        return TemplateEngine.load("member-layout.html", "content/member-events.html")
+                .set("PAGE_TITLE",            "Events")
+                .set("NAV_EVENTS",            "active")
+                .set("ROWS_AVAILABLE_EVENTS", availableRows.toString())
+                .set("ROWS_MY_EVENTS",        myRows.toString())
+                .clearRemaining()
+                .render();
     }
 
     public void registerForEvent(int memberId, int eventId, String chosenMartialArt, String experienceLevel) {
         eventService.registerMemberForEvent(eventId, memberId, chosenMartialArt, experienceLevel);
     }
 
-    private String safe(String value) {
-        return value == null ? "" : value;
-    }
+    // -----------------------------------------------------------------------
+    // EVENT RESULTS
+    // -----------------------------------------------------------------------
 
     public String getMemberEventResultsPage(int eventId) {
 
-        Event event = eventService.getEventById(eventId);
+        Event event          = eventService.getEventById(eventId);
         LiveEventState state = liveEventService.getStateForEvent(eventId);
-        List<Match> matches = matchmakingService.getMatchesForEvent(eventId);
+        List<Match> matches  = matchmakingService.getMatchesForEvent(eventId);
 
-        StringBuilder html = new StringBuilder();
+        String timerBadge = state.isTimerRunning()
+                ? "<span class='badge bg-light text-danger'>LIVE</span>"
+                : "<span class='badge bg-light text-dark'>PAUSED</span>";
 
-        html.append("<html><body>");
-        html.append("<h1>Event Results - ").append(event.getEventName()).append("</h1>");
-
-        html.append("<h2>Live Event State</h2>");
-        html.append("<p><strong>Current Round:</strong> ").append(state.getCurrentRound()).append("</p>");
-        html.append("<p><strong>Timer:</strong> ").append(formatSeconds(state.getRemainingSeconds())).append("</p>");
-        html.append("<p><strong>Status:</strong> ").append(state.isTimerRunning() ? "Round Live" : "Paused / Waiting").append("</p>");
-
-        html.append("<h2>Matches</h2>");
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Match ID</th>");
-        html.append("<th>Participant 1</th>");
-        html.append("<th>Participant 2</th>");
-        html.append("<th>Status</th>");
-        html.append("<th>Round</th>");
-        html.append("<th>Winner</th>");
-        html.append("<th>Decision</th>");
-        html.append("</tr>");
-
+        StringBuilder rows = new StringBuilder();
         for (Match m : matches) {
-            html.append("<tr>");
-            html.append("<td>").append(m.getMatchId()).append("</td>");
-            html.append("<td>").append(m.getParticipant1Name()).append("</td>");
-            html.append("<td>").append(m.getParticipant2Name()).append("</td>");
-            html.append("<td>").append(m.getStatus()).append("</td>");
-            html.append("<td>").append(m.getRoundNumber()).append("</td>");
-            html.append("<td>").append(m.getWinnerName() == null ? "-" : m.getWinnerName()).append("</td>");
-            html.append("<td>").append(m.getResult() == null || m.getResult().isBlank() ? "-" : m.getResult()).append("</td>");
-            html.append("</tr>");
+            String sc = "Live".equals(m.getStatus()) ? "bg-danger"
+                    : "Completed".equals(m.getStatus()) ? "bg-dark" : "bg-secondary";
+
+            rows.append("<tr>")
+                    .append("<td>#").append(m.getMatchId()).append("</td>")
+                    .append("<td>").append(m.getParticipant1Name()).append("</td>")
+                    .append("<td>").append(m.getParticipant2Name()).append("</td>")
+                    .append("<td><span class='badge ").append(sc).append("'>").append(m.getStatus()).append("</span></td>")
+                    .append("<td>").append(m.getRoundNumber()).append("</td>")
+                    .append("<td>").append(m.getWinnerName() == null
+                            ? "<span class='text-muted'>-</span>"
+                            : "<strong>" + m.getWinnerName() + "</strong>").append("</td>")
+                    .append("<td>").append(m.getResult() == null || m.getResult().isBlank()
+                            ? "<span class='text-muted'>-</span>"
+                            : m.getResult()).append("</td>")
+                    .append("</tr>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
-        html.append("</body></html>");
-
-        return html.toString();
+        return TemplateEngine.load("member-layout.html", "content/member-event-results.html")
+                .set("PAGE_TITLE",         "Event Results")
+                .set("NAV_EVENTS",         "active")
+                .set("EVENT_NAME",         event.getEventName())
+                .set("TIMER_BG",           state.isTimerRunning() ? "bg-danger" : "bg-dark")
+                .set("TIMER_DISPLAY",      formatSeconds(state.getRemainingSeconds()))
+                .set("CURRENT_ROUND",      state.getCurrentRound())
+                .set("TIMER_STATUS_BADGE", timerBadge)
+                .set("ROWS_MATCHES",       rows.toString())
+                .clearRemaining()
+                .render();
     }
 
-    private String formatSeconds(int totalSeconds) {
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
-        return String.format("%02d:%02d", minutes, seconds);
-    }
+    // -----------------------------------------------------------------------
+    // MEMBERSHIPS
+    // -----------------------------------------------------------------------
 
     public String getMembershipsPage(int memberId) {
 
         List<Membership> memberships = membershipService.getAllMemberships();
-        Membership currentMembership = membershipService.getMembershipForMember(memberId);
+        Membership current           = membershipService.getMembershipForMember(memberId);
 
-        StringBuilder html = new StringBuilder();
+        String currentAlert = current != null
+                ? "<div class='alert alert-success'><i class='bi bi-check-circle me-2'></i>"
+                + "<strong>Current Membership:</strong> " + current.getMembershipName() + "</div>"
+                : "<div class='alert alert-warning'><i class='bi bi-exclamation-triangle me-2'></i>"
+                + "You do not have an active membership. Select one below.</div>";
 
-        html.append("<html><body>");
-        html.append("<h1>Memberships</h1>");
-
-        if (currentMembership != null) {
-            html.append("<p><strong>Current Membership:</strong> ")
-                    .append(currentMembership.getMembershipName())
-                    .append("</p><br>");
-        }
-
-        html.append("<table border='1'>");
-        html.append("<tr>");
-        html.append("<th>Name</th>");
-        html.append("<th>Description</th>");
-        html.append("<th>Allowed Martial Arts</th>");
-        html.append("<th>Allowed Skill Levels</th>");
-        html.append("<th>Action</th>");
-        html.append("</tr>");
-
+        StringBuilder cards = new StringBuilder();
         for (Membership m : memberships) {
-            html.append("<tr>");
-            html.append("<td>").append(m.getMembershipName()).append("</td>");
-            html.append("<td>").append(m.getDescription()).append("</td>");
-            html.append("<td>").append(m.getAllowedMartialArts()).append("</td>");
-            html.append("<td>").append(m.getAllowedSkillLevels()).append("</td>");
+            boolean isCurrent = current != null && current.getMembershipId() == m.getMembershipId();
 
-            html.append("<td>");
-            html.append("<form method='POST' action='/member/memberships'>");
-            html.append("<input type='hidden' name='membershipId' value='").append(m.getMembershipId()).append("'>");
-            html.append("<button type='submit'>Select Membership</button>");
-            html.append("</form>");
-            html.append("</td>");
-
-            html.append("</tr>");
+            cards.append("<div class='col-md-4'>")
+                    .append("<div class='card h-100").append(isCurrent ? " border-primary border-2" : "").append("'>")
+                    .append("<div class='card-body d-flex flex-column'>")
+                    .append("<h5 class='card-title'>").append(m.getMembershipName())
+                    .append(isCurrent ? " <span class='badge bg-primary ms-1'>Active</span>" : "")
+                    .append("</h5>")
+                    .append("<p class='card-text text-muted'>").append(m.getDescription()).append("</p>")
+                    .append("<ul class='list-unstyled small mb-3'>")
+                    .append("<li><i class='bi bi-check2 text-success me-1'></i>")
+                    .append("<strong>Martial Arts:</strong> ").append(m.getAllowedMartialArts()).append("</li>")
+                    .append("<li><i class='bi bi-check2 text-success me-1'></i>")
+                    .append("<strong>Skill Levels:</strong> ").append(m.getAllowedSkillLevels()).append("</li>")
+                    .append("</ul><div class='mt-auto'>")
+                    .append("<form method='POST' action='/member/memberships'>")
+                    .append("<input type='hidden' name='membershipId' value='").append(m.getMembershipId()).append("'>")
+                    .append("<button class='btn ").append(isCurrent ? "btn-outline-primary" : "btn-primary")
+                    .append(" w-100' type='submit'>")
+                    .append(isCurrent
+                            ? "<i class='bi bi-check-lg me-1'></i>Current Plan"
+                            : "<i class='bi bi-arrow-right-circle me-1'></i>Select")
+                    .append("</button></form></div></div></div></div>");
         }
 
-        html.append("</table>");
-
-        html.append("<br><button onclick=\"location.href='/member-dashboard'\">Back</button>");
-        html.append("</body></html>");
-
-        return html.toString();
+        return TemplateEngine.load("member-layout.html", "content/member-memberships.html")
+                .set("PAGE_TITLE",               "Membership")
+                .set("NAV_MEMBERSHIP",           "active")
+                .set("CURRENT_MEMBERSHIP_ALERT", currentAlert)
+                .set("ROWS_MEMBERSHIP_CARDS",    cards.toString())
+                .clearRemaining()
+                .render();
     }
 
     public void chooseMembership(int memberId, int membershipId) {
         membershipService.assignMembershipToMember(memberId, membershipId);
+    }
+
+    // -----------------------------------------------------------------------
+    // HELPERS
+    // -----------------------------------------------------------------------
+
+    private String formatSeconds(int total) {
+        return String.format("%02d:%02d", total / 60, total % 60);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }
