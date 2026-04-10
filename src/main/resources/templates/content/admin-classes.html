@@ -10,18 +10,30 @@
                 <label class="form-label">Class Name</label>
                 <input class="form-control" name="className" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Description</label>
                 <input class="form-control" name="description">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+                <label class="form-label">Class Type</label>
+                <select class="form-select" name="classType">
+                    <option value="MMA">MMA</option>
+                    <option value="Boxing">Boxing</option>
+                    <option value="Kickboxing">Kickboxing</option>
+                    <option value="Muay Thai">Muay Thai</option>
+                    <option value="Jiu Jitsu">Jiu Jitsu</option>
+                    <option value="Wrestling">Wrestling</option>
+                    <option value="Hyrox">Hyrox</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label class="form-label">Skill Level</label>
                 <select class="form-select" name="skillLevel">
                     <option value="Beginner">Beginner</option>
                     <option value="Intermediate/Advanced">Intermediate/Advanced</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class="form-label">Capacity</label>
                 <input class="form-control" type="number" name="capacity" required>
             </div>
@@ -36,7 +48,14 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead>
-                <tr><th>ID</th><th>Name</th><th>Skill Level</th><th>Capacity</th><th>Actions</th></tr>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Skill Level</th>
+                <th>Capacity</th>
+                <th>Actions</th>
+            </tr>
             </thead>
             <tbody>{{ROWS_CLASSES}}</tbody>
         </table>

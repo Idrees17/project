@@ -116,6 +116,7 @@ public class Main {
                         params.get("className"),
                         params.get("description"),
                         params.get("skillLevel"),
+                        params.get("classType"),
                         Integer.parseInt(params.get("capacity"))
                 );
 
@@ -141,7 +142,40 @@ public class Main {
             exchange.close();
         });
 
+        server.createContext("/admin/edit-class", exchange -> {
 
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                int classId = Integer.parseInt(query.split("=")[1]);
+
+                String html = adminController.getEditClassPage(classId);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String,String> params = parseFormData(body);
+
+                adminController.updateClass(
+                        Integer.parseInt(params.get("classId")),
+                        params.get("className"),
+                        params.get("description"),
+                        params.get("skillLevel"),
+                        params.get("classType"),
+                        Integer.parseInt(params.get("capacity"))
+                );
+
+                redirect(exchange, "/admin/classes");
+            }
+
+            exchange.close();
+        });
         /*
          ADMIN TIMETABLE PAGES
         */
@@ -831,7 +865,6 @@ public class Main {
          ADMIN MEMBERSHIP CONTROLS
         */
 
-
         server.createContext("/admin/memberships", exchange -> {
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
@@ -913,7 +946,7 @@ public class Main {
         });
 
         /*
-         ADMIN TIMETABLE CONTROLS
+         MEMBER TIMETABLE CONTROLS
         */
 
         server.createContext("/member/timetable", exchange -> {
@@ -1004,7 +1037,7 @@ public class Main {
         });
 
         /*
-         ADMIN EVENTS CONTROLS
+         MEMBER EVENT CONTROLS
         */
 
         server.createContext("/member/events", exchange -> {

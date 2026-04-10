@@ -32,11 +32,14 @@ public class AdminController {
             rows.append("<tr>")
                     .append("<td>").append(c.getClassId()).append("</td>")
                     .append("<td>").append(c.getClassName()).append("</td>")
+                    .append("<td><span class='badge bg-primary'>").append(c.getClassType()).append("</span></td>")
                     .append("<td><span class='badge bg-secondary'>").append(c.getSkillLevel()).append("</span></td>")
                     .append("<td>").append(c.getCapacity()).append("</td>")
                     .append("<td class='d-flex gap-2'>")
+                    .append("<a href='/admin/edit-class?classId=").append(c.getClassId())
+                    .append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil me-1'></i>Edit</a>")
                     .append("<a href='/admin/add-session?classId=").append(c.getClassId())
-                    .append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-plus-circle me-1'></i>Add Session</a>")
+                    .append("' class='btn btn-sm btn-outline-secondary'><i class='bi bi-plus-circle me-1'></i>Add Session</a>")
                     .append("<form method='POST' action='/admin/delete-class' style='display:inline;'>")
                     .append("<input type='hidden' name='classId' value='").append(c.getClassId()).append("'>")
                     .append("<button class='btn btn-sm btn-outline-danger' type='submit' ")
@@ -52,12 +55,52 @@ public class AdminController {
                 .render();
     }
 
-    public void createClass(String name, String description, String skill, int capacity) {
-        classService.createClass(name, description, skill, capacity);
+    public void createClass(String name, String description, String skillLevel,
+                            String classType, int capacity) {
+        classService.createClass(name, description, skillLevel, classType, capacity);
     }
 
     public void deleteClass(int classId) {
         classService.deleteClass(classId);
+    }
+
+    public String getEditClassPage(int classId) {
+
+        GymClass c = classService.getClassById(classId);
+
+        String[] types  = {"MMA","Boxing","Kickboxing","Muay Thai","Jiu Jitsu","Wrestling","Hyrox"};
+        String[] skills = {"Beginner","Intermediate/Advanced"};
+
+        StringBuilder typeOpts = new StringBuilder();
+        for (String t : types) {
+            typeOpts.append("<option value='").append(t).append("'")
+                    .append(t.equals(c.getClassType()) ? " selected" : "")
+                    .append(">").append(t).append("</option>");
+        }
+
+        StringBuilder skillOpts = new StringBuilder();
+        for (String s : skills) {
+            skillOpts.append("<option value='").append(s).append("'")
+                    .append(s.equals(c.getSkillLevel()) ? " selected" : "")
+                    .append(">").append(s).append("</option>");
+        }
+
+        return TemplateEngine.load("admin-layout.html", "content/admin-edit-class.html")
+                .set("PAGE_TITLE",          "Edit Class")
+                .set("NAV_CLASSES",         "active")
+                .set("CLASS_ID",            c.getClassId())
+                .set("CLASS_NAME",          c.getClassName())
+                .set("DESCRIPTION",         c.getDescription())
+                .set("OPTIONS_CLASS_TYPE",  typeOpts.toString())
+                .set("OPTIONS_SKILL_LEVEL", skillOpts.toString())
+                .set("CAPACITY",            c.getCapacity())
+                .clearRemaining()
+                .render();
+    }
+
+    public void updateClass(int classId, String name, String description,
+                            String skillLevel, String classType, int capacity) {
+        classService.updateClass(classId, name, description, skillLevel, classType, capacity);
     }
 
     /*
