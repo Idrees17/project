@@ -14,24 +14,24 @@
                 <label class="form-label">Description</label>
                 <input class="form-control" name="description">
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Allowed Martial Arts</label>
-                <select id="artsSelect" class="form-select" multiple size="6" onchange="syncArts()">
-                    <option value="MMA">MMA</option>
-                    <option value="Boxing">Boxing</option>
-                    <option value="Kickboxing">Kickboxing</option>
-                    <option value="Muay Thai">Muay Thai</option>
-                    <option value="Jiu Jitsu">Jiu Jitsu</option>
-                    <option value="Wrestling">Wrestling</option>
-                </select>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Allowed Martial Arts</label>
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="form-check"><input class="form-check-input arts-cb" type="checkbox" value="MMA"><label class="form-check-label">MMA</label></div>
+                    <div class="form-check"><input class="form-check-input arts-cb" type="checkbox" value="Boxing"><label class="form-check-label">Boxing</label></div>
+                    <div class="form-check"><input class="form-check-input arts-cb" type="checkbox" value="Kickboxing"><label class="form-check-label">Kickboxing</label></div>
+                    <div class="form-check"><input class="form-check-input arts-cb" type="checkbox" value="Muay Thai"><label class="form-check-label">Muay Thai</label></div>
+                    <div class="form-check"><input class="form-check-input arts-cb" type="checkbox" value="Jiu Jitsu"><label class="form-check-label">Jiu Jitsu</label></div>
+                    <div class="form-check"><input class="form-check-input arts-cb" type="checkbox" value="Wrestling"><label class="form-check-label">Wrestling</label></div>
+                </div>
                 <input type="hidden" id="allowedMartialArts" name="allowedMartialArts">
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Allowed Skill Levels</label>
-                <select id="skillsSelect" class="form-select" multiple size="2" onchange="syncSkills()">
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate/Advanced">Intermediate/Advanced</option>
-                </select>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Allowed Skill Levels</label>
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="form-check"><input class="form-check-input skills-cb" type="checkbox" value="Beginner"><label class="form-check-label">Beginner</label></div>
+                    <div class="form-check"><input class="form-check-input skills-cb" type="checkbox" value="Intermediate/Advanced"><label class="form-check-label">Intermediate/Advanced</label></div>
+                </div>
                 <input type="hidden" id="allowedSkillLevels" name="allowedSkillLevels">
             </div>
             <div class="col-12">
@@ -45,7 +45,7 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead>
-                <tr><th>ID</th><th>Name</th><th>Description</th><th>Martial Arts</th><th>Skill Levels</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Martial Arts</th><th>Skill Levels</th><th>Actions</th></tr>
             </thead>
             <tbody>{{ROWS_MEMBERSHIPS}}</tbody>
         </table>
@@ -53,12 +53,12 @@
 </div>
 
 <script>
-function syncArts() {
-    document.getElementById('allowedMartialArts').value =
-        Array.from(document.getElementById('artsSelect').selectedOptions).map(o => o.value).join(',');
-}
-function syncSkills() {
-    document.getElementById('allowedSkillLevels').value =
-        Array.from(document.getElementById('skillsSelect').selectedOptions).map(o => o.value).join(',');
-}
+    document.querySelectorAll('.arts-cb').forEach(cb => cb.addEventListener('change', () => {
+        document.getElementById('allowedMartialArts').value =
+            Array.from(document.querySelectorAll('.arts-cb:checked')).map(c => c.value).join(',');
+    }));
+    document.querySelectorAll('.skills-cb').forEach(cb => cb.addEventListener('change', () => {
+        document.getElementById('allowedSkillLevels').value =
+            Array.from(document.querySelectorAll('.skills-cb:checked')).map(c => c.value).join(',');
+    }));
 </script>

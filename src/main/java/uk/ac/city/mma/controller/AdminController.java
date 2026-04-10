@@ -19,9 +19,9 @@ public class AdminController {
     private LiveEventService liveEventService       = new LiveEventService();
     private MembershipService membershipService     = new MembershipService();
 
-    // -----------------------------------------------------------------------
-    // CLASSES
-    // -----------------------------------------------------------------------
+    /*
+    CLASSES
+    */
 
     public String getClassesPage() {
 
@@ -60,9 +60,9 @@ public class AdminController {
         classService.deleteClass(classId);
     }
 
-    // -----------------------------------------------------------------------
-    // TIMETABLE
-    // -----------------------------------------------------------------------
+    /*
+    TIMETABLE
+    */
 
     public String getTimetablePage() {
 
@@ -137,9 +137,9 @@ public class AdminController {
         classSessionService.updateSession(id, day, time, dur, coach, room);
     }
 
-    // -----------------------------------------------------------------------
-    // ADD SESSION
-    // -----------------------------------------------------------------------
+    /*
+    ADD SESSION
+    */
 
     public String getAddSessionPage() {
 
@@ -157,9 +157,9 @@ public class AdminController {
         classSessionService.createSession(classId, day, time, dur, coach, room);
     }
 
-    // -----------------------------------------------------------------------
-    // EDIT SESSION
-    // -----------------------------------------------------------------------
+    /*
+    EDIT SESSION
+    */
 
     public String getEditSessionPage(int sessionId) {
 
@@ -187,9 +187,9 @@ public class AdminController {
                 .render();
     }
 
-    // -----------------------------------------------------------------------
-    // GENERATE TIMETABLE
-    // -----------------------------------------------------------------------
+    /*
+    GENERATE TIMETABLE
+    */
 
     public String getGeneratorPage() {
 
@@ -225,9 +225,9 @@ public class AdminController {
         timetableService.generateMultiple(requests);
     }
 
-    // -----------------------------------------------------------------------
-    // COACHES
-    // -----------------------------------------------------------------------
+    /*
+    COACHES
+    */
 
     public String getCoachesPage() {
 
@@ -274,9 +274,9 @@ public class AdminController {
 
     public void updateCoach(int id, String name, String specialty) { coachService.updateCoach(id, name, specialty); }
 
-    // -----------------------------------------------------------------------
-    // ROOMS
-    // -----------------------------------------------------------------------
+    /*
+    ROOMS
+    */
 
     public String getRoomsPage() {
 
@@ -323,9 +323,9 @@ public class AdminController {
 
     public void updateRoom(int id, String name, int capacity) { roomService.updateRoom(id, name, capacity); }
 
-    // -----------------------------------------------------------------------
-    // MEMBERS
-    // -----------------------------------------------------------------------
+    /*
+    MEMBERS
+    */
 
     public String getMembersPage() {
 
@@ -378,9 +378,9 @@ public class AdminController {
         memberService.updateProfileByMemberId(id, fn, ln, age, h, w);
     }
 
-    // -----------------------------------------------------------------------
-    // MEMBERSHIPS
-    // -----------------------------------------------------------------------
+    /*
+    MEMBERSHIPS
+    */
 
     public String getMembershipsPage() {
 
@@ -424,30 +424,34 @@ public class AdminController {
         String allowedArts   = m.getAllowedMartialArts()  == null ? "" : m.getAllowedMartialArts();
         String allowedSkills = m.getAllowedSkillLevels()  == null ? "" : m.getAllowedSkillLevels();
 
-        StringBuilder artOpts = new StringBuilder();
+        StringBuilder artCheckboxes = new StringBuilder();
         for (String a : new String[]{"MMA","Boxing","Kickboxing","Muay Thai","Jiu Jitsu","Wrestling"}) {
-            artOpts.append("<option value='").append(a).append("'")
-                    .append(csvContains(allowedArts, a) ? " selected" : "")
-                    .append(">").append(a).append("</option>");
+            boolean checked = csvContains(allowedArts, a);
+            artCheckboxes.append("<div class='form-check'>")
+                    .append("<input class='form-check-input arts-cb' type='checkbox' value='").append(a).append("'")
+                    .append(checked ? " checked" : "")
+                    .append("><label class='form-check-label'>").append(a).append("</label></div>");
         }
 
-        StringBuilder skillOpts = new StringBuilder();
+        StringBuilder skillCheckboxes = new StringBuilder();
         for (String sk : new String[]{"Beginner","Intermediate/Advanced"}) {
-            skillOpts.append("<option value='").append(sk).append("'")
-                    .append(csvContains(allowedSkills, sk) ? " selected" : "")
-                    .append(">").append(sk).append("</option>");
+            boolean checked = csvContains(allowedSkills, sk);
+            skillCheckboxes.append("<div class='form-check'>")
+                    .append("<input class='form-check-input skills-cb' type='checkbox' value='").append(sk).append("'")
+                    .append(checked ? " checked" : "")
+                    .append("><label class='form-check-label'>").append(sk).append("</label></div>");
         }
 
         return TemplateEngine.load("admin-layout.html", "content/admin-edit-membership.html")
-                .set("PAGE_TITLE",      "Edit Membership")
-                .set("NAV_MEMBERSHIPS", "active")
-                .set("MEMBERSHIP_ID",   m.getMembershipId())
-                .set("MEMBERSHIP_NAME", m.getMembershipName())
-                .set("DESCRIPTION",     m.getDescription())
-                .set("OPTIONS_ARTS",    artOpts.toString())
-                .set("OPTIONS_SKILLS",  skillOpts.toString())
-                .set("ALLOWED_ARTS",    allowedArts)
-                .set("ALLOWED_SKILLS",  allowedSkills)
+                .set("PAGE_TITLE",        "Edit Membership")
+                .set("NAV_MEMBERSHIPS",   "active")
+                .set("MEMBERSHIP_ID",     m.getMembershipId())
+                .set("MEMBERSHIP_NAME",   m.getMembershipName())
+                .set("DESCRIPTION",       m.getDescription())
+                .set("CHECKBOXES_ARTS",   artCheckboxes.toString())
+                .set("CHECKBOXES_SKILLS", skillCheckboxes.toString())
+                .set("ALLOWED_ARTS",      allowedArts)
+                .set("ALLOWED_SKILLS",    allowedSkills)
                 .clearRemaining()
                 .render();
     }
@@ -456,9 +460,9 @@ public class AdminController {
         membershipService.updateMembership(id, name, desc, arts, skills);
     }
 
-    // -----------------------------------------------------------------------
-    // EVENTS / TOURNAMENTS
-    // -----------------------------------------------------------------------
+    /*
+    EVENTS / TOURNAMENTS
+    */
 
     public String getTournamentsPage() {
 
@@ -545,9 +549,9 @@ public class AdminController {
                 .render();
     }
 
-    // -----------------------------------------------------------------------
-    // ENTRANTS
-    // -----------------------------------------------------------------------
+    /*
+    ENTRANTS
+    */
 
     public String getEntrantsPage(int eventId) {
 
@@ -575,9 +579,9 @@ public class AdminController {
 
     public void generateMatchesForEvent(int eventId) { matchmakingService.generateMatchesForEvent(eventId); }
 
-    // -----------------------------------------------------------------------
-    // MATCHES
-    // -----------------------------------------------------------------------
+    /*
+    MATCHES
+    */
 
     public String getMatchesPage(int eventId) {
 
@@ -616,9 +620,9 @@ public class AdminController {
                 .render();
     }
 
-    // -----------------------------------------------------------------------
-    // EVENT RESULTS
-    // -----------------------------------------------------------------------
+    /*
+    EVENT RESULTS
+    */
 
     public String getAdminEventResultsPage(int eventId) {
 
@@ -657,9 +661,9 @@ public class AdminController {
                 .render();
     }
 
-    // -----------------------------------------------------------------------
-    // LIVE CONTROL
-    // -----------------------------------------------------------------------
+    /*
+    LIVE CONTROL
+    */
 
     public String getAdminLiveControlPage(int eventId, Integer selectedMatchId) {
 
@@ -765,9 +769,9 @@ public class AdminController {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // PRIVATE HELPERS
-    // -----------------------------------------------------------------------
+    /*
+    PRIVATE HELPERS
+    */
 
     private String classOptions(List<GymClass> classes) {
         StringBuilder sb = new StringBuilder();
