@@ -305,12 +305,21 @@ public class AdminController {
 
     public String getEditCoachPage(int coachId) {
         Coach c = coachService.getCoachById(coachId);
+
+        String[] specialties = {"MMA","Boxing","Kickboxing","Muay Thai","Jiu Jitsu","Wrestling","Hyrox"};
+        StringBuilder specialtyOpts = new StringBuilder();
+        for (String s : specialties) {
+            specialtyOpts.append("<option value='").append(s).append("'")
+                    .append(s.equals(c.getSpecialty()) ? " selected" : "")
+                    .append(">").append(s).append("</option>");
+        }
+
         return TemplateEngine.load("admin-layout.html", "content/admin-edit-coach.html")
-                .set("PAGE_TITLE",      "Edit Coach")
-                .set("NAV_COACHES",     "active")
-                .set("COACH_ID",        c.getCoachId())
-                .set("COACH_NAME",      c.getName())
-                .set("COACH_SPECIALTY", c.getSpecialty())
+                .set("PAGE_TITLE",         "Edit Coach")
+                .set("NAV_COACHES",        "active")
+                .set("COACH_ID",           c.getCoachId())
+                .set("COACH_NAME",         c.getName())
+                .set("OPTIONS_SPECIALTY",  specialtyOpts.toString())
                 .clearRemaining()
                 .render();
     }

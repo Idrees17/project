@@ -12,7 +12,9 @@
             </div>
             <div class="col-12">
                 <label class="form-label">Specialty</label>
-                <input class="form-control" name="specialty" value="{{COACH_SPECIALTY}}">
+                <select class="form-select" name="specialty">
+                    {{OPTIONS_SPECIALTY}}
+                </select>
             </div>
             <div class="col-12 d-flex gap-2">
                 <button class="btn btn-primary" type="submit"><i class="bi bi-check-lg me-1"></i>Update</button>

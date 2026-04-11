@@ -12,7 +12,15 @@
             </div>
             <div class="col-md-5">
                 <label class="form-label">Specialty</label>
-                <input class="form-control" name="specialty">
+                <select class="form-select" name="specialty">
+                    <option value="MMA">MMA</option>
+                    <option value="Boxing">Boxing</option>
+                    <option value="Kickboxing">Kickboxing</option>
+                    <option value="Muay Thai">Muay Thai</option>
+                    <option value="Jiu Jitsu">Jiu Jitsu</option>
+                    <option value="Wrestling">Wrestling</option>
+                    <option value="Hyrox">Hyrox</option>
+                </select>
             </div>
             <div class="col-md-2 d-flex align-items-end">
                 <button class="btn btn-primary w-100" type="submit">Add</button>
@@ -25,7 +33,7 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead>
-                <tr><th>ID</th><th>Name</th><th>Specialty</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Specialty</th><th>Actions</th></tr>
             </thead>
             <tbody>{{ROWS_COACHES}}</tbody>
         </table>
