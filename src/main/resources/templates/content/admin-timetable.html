@@ -8,4 +8,48 @@
 
 {{GENERATION_LOG}}
 
-{{TIMETABLE_DAYS}}
+<!-- Timetable grid -->
+<div class="card">
+    <div class="card-body p-0">
+        <div style="overflow-x:auto">
+            <table class="table table-bordered mb-0" style="min-width:900px; table-layout:fixed">
+                <thead>
+                <tr style="background:#212529; color:#fff">
+                    <th style="width:80px" class="text-center py-3">Time</th>
+                    <th class="text-center py-3">Monday</th>
+                    <th class="text-center py-3">Tuesday</th>
+                    <th class="text-center py-3">Wednesday</th>
+                    <th class="text-center py-3">Thursday</th>
+                    <th class="text-center py-3">Friday</th>
+                    <th class="text-center py-3">Saturday</th>
+                    <th class="text-center py-3">Sunday</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{TIME_ROWS}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="d-flex gap-3 mt-3 flex-wrap">
+    <span><span class="badge me-1" style="background:#0d6efd">&nbsp;</span>Manual</span>
+    <span><span class="badge me-1" style="background:#6f42c1">&nbsp;</span>Generated</span>
+</div>
+
+<style>
+    .session-block {
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 0.8rem;
+        color: #fff;
+    }
+    .session-block .session-name { font-weight: 600; display: block; }
+    .session-block .session-meta { opacity: 0.85; display: block; font-size: 0.75rem; }
+    .session-block .session-actions { margin-top: 4px; display: flex; gap: 4px; }
+    .timetable-cell { vertical-align: top; padding: 4px !important; height: 60px; }
+    .time-cell { vertical-align: middle; text-align: center; font-size: 0.8rem;
+        color: #6c757d; font-weight: 600; padding: 4px !important; }
+</style>

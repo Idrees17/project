@@ -121,53 +121,66 @@ public class AdminController {
             generationLog = log.toString();
         }
 
-        String[] days = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
-        StringBuilder dayBlocks = new StringBuilder();
+        String[] dayNames = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
 
-        for (String day : days) {
-            boolean hasDay = sessions.stream().anyMatch(s -> s.getDayOfWeek().equalsIgnoreCase(day));
-            if (!hasDay) continue;
+        /*
+        TIME SLOT ROWS
+        */
+        StringBuilder timeRows = new StringBuilder();
 
-            dayBlocks.append("<h5 class='mt-4 mb-2 text-muted text-uppercase fw-bold' style='letter-spacing:1px'>")
-                    .append(day).append("</h5>")
-                    .append("<div class='card mb-3'><div class='card-body p-0'>")
-                    .append("<table class='table table-hover mb-0'>")
-                    .append("<thead><tr><th>Class</th><th>Skill Level</th><th>Time</th>")
-                    .append("<th>Duration</th><th>Coach</th><th>Room</th><th>Source</th><th>Actions</th>")
-                    .append("</tr></thead><tbody>");
+        for (int hour = 6; hour < 22; hour++) {
+            for (int min = 0; min < 60; min += 30) {
+                String slotTime = String.format("%02d:%02d", hour, min);
 
-            for (ClassSession s : sessions) {
-                if (!s.getDayOfWeek().equalsIgnoreCase(day)) continue;
+                boolean hasAny = false;
+                for (ClassSession s : sessions) {
+                    if (s.getStartTime().equals(slotTime)) { hasAny = true; break; }
+                }
 
-                String sourceBadge = s.isGenerated()
-                        ? "<span class='badge' style='background:#6f42c1'>Generated</span>"
-                        : "<span class='badge bg-secondary'>Manual</span>";
+                timeRows.append("<tr>");
+                timeRows.append("<td class='time-cell'>").append(slotTime).append("</td>");
 
-                dayBlocks.append("<tr>")
-                        .append("<td>").append(s.getClassName()).append("</td>")
-                        .append("<td><span class='badge bg-secondary'>").append(s.getSkillLevel()).append("</span></td>")
-                        .append("<td>").append(s.getStartTime()).append("</td>")
-                        .append("<td>").append(s.getDurationMinutes()).append(" mins</td>")
-                        .append("<td>").append(s.getCoachName()).append("</td>")
-                        .append("<td>").append(s.getRoom()).append("</td>")
-                        .append("<td>").append(sourceBadge).append("</td>")
-                        .append("<td class='d-flex gap-1'>")
-                        .append("<a href='/admin/edit-session?sessionId=").append(s.getSessionId())
-                        .append("' class='btn btn-sm btn-outline-primary'><i class='bi bi-pencil'></i></a>")
-                        .append("<form method='POST' action='/admin/delete-session' style='display:inline;'>")
-                        .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
-                        .append("<button class='btn btn-sm btn-outline-danger' type='submit' ")
-                        .append("onclick='return confirm(\"Delete session?\")'><i class='bi bi-trash'></i></button>")
-                        .append("</form></td></tr>");
+                for (String dayName : dayNames) {
+                    timeRows.append("<td class='timetable-cell'>");
+
+                    for (ClassSession s : sessions) {
+                        if (!s.getDayOfWeek().equalsIgnoreCase(dayName)) continue;
+                        if (!s.getStartTime().equals(slotTime)) continue;
+
+                        String bgColor = s.isGenerated() ? "#6f42c1" : "#0d6efd";
+
+                        timeRows.append("<div class='session-block' style='background:").append(bgColor).append("'>")
+                                .append("<span class='session-name'>").append(s.getClassName()).append("</span>")
+                                .append("<span class='session-meta'>")
+                                .append(s.getStartTime()).append(" \u00b7 ").append(s.getDurationMinutes()).append("m")
+                                .append(" \u00b7 ").append(s.getCoachName())
+                                .append("</span>")
+                                .append("<span class='session-meta'>").append(s.getRoom()).append("</span>")
+                                .append("<div class='session-actions'>")
+                                .append("<a href='/admin/edit-session?sessionId=").append(s.getSessionId())
+                                .append("' class='btn btn-sm btn-light' style='font-size:0.7rem;padding:2px 6px'>")
+                                .append("<i class='bi bi-pencil'></i></a>")
+                                .append("<form method='POST' action='/admin/delete-session' style='display:inline;'>")
+                                .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
+                                .append("<button class='btn btn-sm btn-light' style='font-size:0.7rem;padding:2px 6px' ")
+                                .append("type='submit' onclick='return confirm(\"Delete session?\")'>")
+                                .append("<i class='bi bi-trash'></i></button></form>")
+                                .append("</div>")
+                                .append("</div>");
+                    }
+
+                    timeRows.append("</td>");
+                }
+
+                timeRows.append("</tr>");
             }
-            dayBlocks.append("</tbody></table></div></div>");
         }
 
         return TemplateEngine.load("admin-layout.html", "content/admin-timetable.html")
-                .set("PAGE_TITLE",      "Timetable")
-                .set("NAV_TIMETABLE",   "active")
-                .set("GENERATION_LOG",  generationLog)
-                .set("TIMETABLE_DAYS",  dayBlocks.toString())
+                .set("PAGE_TITLE",     "Timetable")
+                .set("NAV_TIMETABLE",  "active")
+                .set("GENERATION_LOG", generationLog)
+                .set("TIME_ROWS",      timeRows.toString())
                 .clearRemaining()
                 .render();
     }
