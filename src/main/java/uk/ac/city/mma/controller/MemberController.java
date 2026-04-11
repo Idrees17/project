@@ -20,9 +20,9 @@ public class MemberController {
     private ClassSessionService classSessionService                    = new ClassSessionService();
     private ClassSessionRegistrationService sessionRegistrationService = new ClassSessionRegistrationService();
 
-    // -----------------------------------------------------------------------
-    // PROFILE
-    // -----------------------------------------------------------------------
+    /*
+     PROFILE
+    */
 
     public String getProfilePage(int userId) {
 
@@ -136,7 +136,9 @@ public class MemberController {
                 timeRows.append("<td class='time-cell'>").append(slotTime).append("</td>");
 
                 for (int d = 0; d < 7; d++) {
-                    String dayName = dayNames[d];
+                    String dayName   = dayNames[d];
+                    LocalDate sessionDate = monday.plusDays(d);
+                    boolean isPast   = sessionDate.isBefore(today);
                     timeRows.append("<td class='timetable-cell'>");
 
                     for (ClassSession s : sessions) {
@@ -149,9 +151,10 @@ public class MemberController {
                                 .getRegistrationCountForWeek(s.getSessionId(), weekStartDate);
 
                         String bgColor;
-                        if (registered)    bgColor = "#198754";
-                        else if (!allowed) bgColor = "#6c757d";
-                        else               bgColor = "#0d6efd";
+                        if (isPast)            bgColor = "#adb5bd";
+                        else if (registered)   bgColor = "#198754";
+                        else if (!allowed)     bgColor = "#6c757d";
+                        else                   bgColor = "#0d6efd";
 
                         timeRows.append("<div class='session-block' style='background:").append(bgColor)
                                 .append(";color:#fff'>");
@@ -161,7 +164,10 @@ public class MemberController {
                                 .append("</span>");
                         timeRows.append("<span class='session-spots'>").append(spots).append(" booked</span>");
 
-                        if (registered) {
+                        if (isPast) {
+                            timeRows.append("<span style='font-size:0.7rem;opacity:0.85'>"
+                                    + "<i class='bi bi-clock-history me-1'></i>Past</span>");
+                        } else if (registered) {
                             timeRows.append("<form method='POST' action='/member/timetable/unregister' class='mt-1'>")
                                     .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
                                     .append("<input type='hidden' name='weekStartDate' value='").append(weekStartDate).append("'>")
@@ -305,9 +311,9 @@ public class MemberController {
         eventService.registerMemberForEvent(eventId, memberId, chosenMartialArt, experienceLevel);
     }
 
-    // -----------------------------------------------------------------------
-    // EVENT RESULTS
-    // -----------------------------------------------------------------------
+    /*
+     EVENT RESULTS
+    */
 
     public String getMemberEventResultsPage(int eventId) {
 
@@ -352,9 +358,9 @@ public class MemberController {
                 .render();
     }
 
-    // -----------------------------------------------------------------------
-    // MEMBERSHIPS
-    // -----------------------------------------------------------------------
+    /*
+    MEMBERSHIPS
+    */
 
     public String getMembershipsPage(int memberId) {
 
@@ -407,9 +413,9 @@ public class MemberController {
         membershipService.assignMembershipToMember(memberId, membershipId);
     }
 
-    // -----------------------------------------------------------------------
-    // HELPERS
-    // -----------------------------------------------------------------------
+    /*
+     HELPERS
+    */
 
     private String formatSeconds(int total) {
         return String.format("%02d:%02d", total / 60, total % 60);
