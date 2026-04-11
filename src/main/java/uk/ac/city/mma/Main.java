@@ -865,6 +865,7 @@ public class Main {
          ADMIN MEMBERSHIP CONTROLS
         */
 
+
         server.createContext("/admin/memberships", exchange -> {
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
@@ -945,9 +946,6 @@ public class Main {
             exchange.close();
         });
 
-        /*
-         MEMBER TIMETABLE CONTROLS
-        */
 
         server.createContext("/member/timetable", exchange -> {
 
@@ -976,7 +974,18 @@ public class Main {
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
 
-                String html = memberController.getTimetablePage(profile.getMemberId());
+                String query = exchange.getRequestURI().getQuery();
+                String weekParam = null;
+                if (query != null) {
+                    for (String part : query.split("&")) {
+                        if (part.startsWith("week=")) {
+                            weekParam = part.substring(5);
+                            break;
+                        }
+                    }
+                }
+
+                String html = memberController.getTimetablePage(profile.getMemberId(), weekParam);
 
                 byte[] response = html.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
@@ -991,12 +1000,15 @@ public class Main {
                 String body = new String(exchange.getRequestBody().readAllBytes());
                 Map<String, String> params = parseFormData(body);
 
+                String weekStartDate = params.get("weekStartDate");
+
                 memberController.registerForSession(
                         profile.getMemberId(),
-                        Integer.parseInt(params.get("sessionId"))
+                        Integer.parseInt(params.get("sessionId")),
+                        weekStartDate
                 );
 
-                redirect(exchange, "/member/timetable");
+                redirect(exchange, "/member/timetable?week=" + weekStartDate);
             }
 
             exchange.close();
@@ -1025,20 +1037,19 @@ public class Main {
                 String body = new String(exchange.getRequestBody().readAllBytes());
                 Map<String, String> params = parseFormData(body);
 
+                String weekStartDate = params.get("weekStartDate");
+
                 memberController.unregisterFromSession(
                         profile.getMemberId(),
-                        Integer.parseInt(params.get("sessionId"))
+                        Integer.parseInt(params.get("sessionId")),
+                        weekStartDate
                 );
 
-                redirect(exchange, "/member/timetable");
+                redirect(exchange, "/member/timetable?week=" + weekStartDate);
             }
 
             exchange.close();
         });
-
-        /*
-         MEMBER EVENT CONTROLS
-        */
 
         server.createContext("/member/events", exchange -> {
 

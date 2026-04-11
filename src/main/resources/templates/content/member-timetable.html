@@ -5,4 +5,57 @@
 
 {{MEMBERSHIP_ALERT}}
 
-{{TIMETABLE_DAYS}}
+<!-- Week navigation -->
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/member/timetable?week={{PREV_WEEK}}" class="btn btn-outline-secondary">
+        <i class="bi bi-chevron-left me-1"></i>Previous Week
+    </a>
+    <h5 class="mb-0 fw-semibold">{{WEEK_LABEL}}</h5>
+    <a href="/member/timetable?week={{NEXT_WEEK}}" class="btn btn-outline-secondary">
+        Next Week<i class="bi bi-chevron-right ms-1"></i>
+    </a>
+    <a href="/member/timetable" class="btn btn-outline-primary ms-2">Today</a>
+</div>
+
+<!-- Timetable grid -->
+<div class="card">
+    <div class="card-body p-0">
+        <div style="overflow-x:auto">
+            <table class="table table-bordered mb-0" style="min-width:900px; table-layout:fixed">
+                <thead>
+                <tr style="background:#212529; color:#fff">
+                    <th style="width:80px" class="text-center py-3">Time</th>
+                    {{DAY_HEADERS}}
+                </tr>
+                </thead>
+                <tbody>
+                {{TIME_ROWS}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="d-flex gap-3 mt-3 flex-wrap">
+    <span><span class="badge bg-primary me-1">&nbsp;</span>Available</span>
+    <span><span class="badge bg-success me-1">&nbsp;</span>Registered</span>
+    <span><span class="badge bg-secondary me-1">&nbsp;</span>Not in membership</span>
+</div>
+
+<style>
+    .session-block {
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: opacity .15s;
+    }
+    .session-block:hover { opacity: 0.85; }
+    .session-block .session-name { font-weight: 600; display: block; }
+    .session-block .session-time { opacity: 0.85; display: block; }
+    .session-block .session-spots { opacity: 0.75; display: block; font-size:0.75rem; }
+    .timetable-cell { vertical-align: top; padding: 4px !important; height: 60px; }
+    .time-cell { vertical-align: middle; text-align: center; font-size: 0.8rem;
+        color: #6c757d; font-weight: 600; padding: 4px !important; }
+</style>

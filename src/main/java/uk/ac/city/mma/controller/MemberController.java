@@ -4,6 +4,10 @@ import uk.ac.city.mma.model.*;
 import uk.ac.city.mma.service.*;
 import uk.ac.city.mma.util.TemplateEngine;
 
+import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 public class MemberController {
@@ -50,18 +54,47 @@ public class MemberController {
         memberService.saveProfile(userId, firstName, lastName, age, heightCm, weightKg);
     }
 
-    // -----------------------------------------------------------------------
-    // TIMETABLE
-    // -----------------------------------------------------------------------
+    /*
+    TIMETABLE
+    */
 
-    public String getTimetablePage(int memberId) {
+    public String getTimetablePage(int memberId, String weekParam) {
 
         List<ClassSession> sessions = classSessionService.getAllSessions();
-        List<Integer> registeredIds = sessionRegistrationService.getRegisteredSessionIdsForMember(memberId);
         Membership membership       = membershipService.getMembershipForMember(memberId);
 
-        String[] days = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
+        /*
+        WEEK CALCULATION
+        */
+        LocalDate today  = LocalDate.now();
+        LocalDate monday;
 
+        if (weekParam != null && !weekParam.isBlank()) {
+            try {
+                monday = LocalDate.parse(weekParam);
+            } catch (Exception e) {
+                monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            }
+        } else {
+            monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        }
+
+        LocalDate sunday         = monday.plusDays(6);
+        String weekStartDate     = monday.toString();
+        String prevWeek          = monday.minusWeeks(1).toString();
+        String nextWeek          = monday.plusWeeks(1).toString();
+
+        DateTimeFormatter display = DateTimeFormatter.ofPattern("d MMM yyyy");
+        String weekLabel = monday.format(display) + " \u2014 " + sunday.format(display);
+
+        List<Integer> registeredIds = sessionRegistrationService
+                .getRegisteredSessionIdsForMemberAndWeek(memberId, weekStartDate);
+
+        String[] dayNames = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
+
+        /*
+        MEMBERSHIP BADGE / ALERT
+        */
         String membershipBadge = membership != null
                 ? "<span class='badge bg-primary fs-6'><i class='bi bi-card-checklist me-1'></i>"
                 + membership.getMembershipName() + "</span>"
@@ -75,58 +108,81 @@ public class MemberController {
                 + "to register for classes.</div></div>"
                 : "";
 
-        StringBuilder dayBlocks = new StringBuilder();
+        /*
+        DAY HEADER ROW
+        */
+        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("EEE d MMM");
+        StringBuilder dayHeaders = new StringBuilder();
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = monday.plusDays(i);
+            boolean isToday = date.equals(today);
+            String bg = isToday ? "style='background:#0d6efd;color:#fff'" : "";
+            dayHeaders.append("<th class='text-center py-3' ").append(bg).append(">")
+                    .append(date.format(dayFmt))
+                    .append("</th>");
+        }
 
-        for (String day : days) {
-            boolean hasDay = sessions.stream().anyMatch(s -> s.getDayOfWeek().equalsIgnoreCase(day));
-            if (!hasDay) continue;
+        /*
+        TIME SLOT ROWS
+        One row per 30-minute slot from 06:00 to 22:00.
+        */
+        StringBuilder timeRows = new StringBuilder();
 
-            dayBlocks.append("<h5 class='mt-4 mb-2 text-muted text-uppercase fw-bold' style='letter-spacing:1px'>")
-                    .append(day).append("</h5>")
-                    .append("<div class='card mb-3'><div class='card-body p-0'>")
-                    .append("<table class='table table-hover mb-0'>")
-                    .append("<thead><tr><th>Class</th><th>Skill Level</th><th>Time</th>")
-                    .append("<th>Duration</th><th>Coach</th><th>Room</th><th>Spots Taken</th><th>Action</th>")
-                    .append("</tr></thead><tbody>");
+        for (int hour = 6; hour < 22; hour++) {
+            for (int min = 0; min < 60; min += 30) {
+                String slotTime = String.format("%02d:%02d", hour, min);
 
-            for (ClassSession s : sessions) {
-                if (!s.getDayOfWeek().equalsIgnoreCase(day)) continue;
+                timeRows.append("<tr>");
+                timeRows.append("<td class='time-cell'>").append(slotTime).append("</td>");
 
-                boolean registered = registeredIds.contains(s.getSessionId());
-                int     spotsTaken = sessionRegistrationService.getRegistrationCount(s.getSessionId());
-                boolean allowed    = membership != null && isMembershipCompatible(membership, s);
+                for (int d = 0; d < 7; d++) {
+                    String dayName = dayNames[d];
+                    timeRows.append("<td class='timetable-cell'>");
 
-                String actionCell;
-                if (registered) {
-                    actionCell =
-                            "<form method='POST' action='/member/timetable/unregister'>"
-                                    + "<input type='hidden' name='sessionId' value='" + s.getSessionId() + "'>"
-                                    + "<button class='btn btn-sm btn-outline-danger'>"
-                                    + "<i class='bi bi-x-circle me-1'></i>Unregister</button></form>";
-                } else if (!allowed) {
-                    actionCell =
-                            "<span class='text-muted small'>"
-                                    + "<i class='bi bi-lock me-1'></i>Not in your membership</span>";
-                } else {
-                    actionCell =
-                            "<form method='POST' action='/member/timetable'>"
-                                    + "<input type='hidden' name='sessionId' value='" + s.getSessionId() + "'>"
-                                    + "<button class='btn btn-sm btn-primary'>"
-                                    + "<i class='bi bi-plus-circle me-1'></i>Register</button></form>";
+                    for (ClassSession s : sessions) {
+                        if (!s.getDayOfWeek().equalsIgnoreCase(dayName)) continue;
+                        if (!s.getStartTime().equals(slotTime)) continue;
+
+                        boolean registered = registeredIds.contains(s.getSessionId());
+                        boolean allowed    = membership != null && isMembershipCompatible(membership, s);
+                        int spots = sessionRegistrationService
+                                .getRegistrationCountForWeek(s.getSessionId(), weekStartDate);
+
+                        String bgColor;
+                        if (registered)    bgColor = "#198754";
+                        else if (!allowed) bgColor = "#6c757d";
+                        else               bgColor = "#0d6efd";
+
+                        timeRows.append("<div class='session-block' style='background:").append(bgColor)
+                                .append(";color:#fff'>");
+                        timeRows.append("<span class='session-name'>").append(s.getClassName()).append("</span>");
+                        timeRows.append("<span class='session-time'>")
+                                .append(s.getStartTime()).append(" \u00b7 ").append(s.getDurationMinutes()).append("m")
+                                .append("</span>");
+                        timeRows.append("<span class='session-spots'>").append(spots).append(" booked</span>");
+
+                        if (registered) {
+                            timeRows.append("<form method='POST' action='/member/timetable/unregister' class='mt-1'>")
+                                    .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
+                                    .append("<input type='hidden' name='weekStartDate' value='").append(weekStartDate).append("'>")
+                                    .append("<button class='btn btn-sm btn-light w-100' style='font-size:0.7rem;padding:2px 4px' type='submit'>Unregister</button>")
+                                    .append("</form>");
+                        } else if (allowed) {
+                            timeRows.append("<form method='POST' action='/member/timetable' class='mt-1'>")
+                                    .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
+                                    .append("<input type='hidden' name='weekStartDate' value='").append(weekStartDate).append("'>")
+                                    .append("<button class='btn btn-sm btn-light w-100' style='font-size:0.7rem;padding:2px 4px' type='submit'>Register</button>")
+                                    .append("</form>");
+                        }
+
+                        timeRows.append("</div>");
+                    }
+
+                    timeRows.append("</td>");
                 }
 
-                dayBlocks.append("<tr>")
-                        .append("<td class='fw-semibold'>").append(s.getClassName()).append("</td>")
-                        .append("<td><span class='badge bg-secondary'>").append(s.getSkillLevel()).append("</span></td>")
-                        .append("<td>").append(s.getStartTime()).append("</td>")
-                        .append("<td>").append(s.getDurationMinutes()).append(" mins</td>")
-                        .append("<td>").append(s.getCoachName()).append("</td>")
-                        .append("<td>").append(s.getRoom()).append("</td>")
-                        .append("<td>").append(spotsTaken).append("</td>")
-                        .append("<td>").append(actionCell).append("</td>")
-                        .append("</tr>");
+                timeRows.append("</tr>");
             }
-            dayBlocks.append("</tbody></table></div></div>");
         }
 
         return TemplateEngine.load("member-layout.html", "content/member-timetable.html")
@@ -134,7 +190,11 @@ public class MemberController {
                 .set("NAV_TIMETABLE",    "active")
                 .set("MEMBERSHIP_BADGE", membershipBadge)
                 .set("MEMBERSHIP_ALERT", membershipAlert)
-                .set("TIMETABLE_DAYS",   dayBlocks.toString())
+                .set("WEEK_LABEL",       weekLabel)
+                .set("PREV_WEEK",        prevWeek)
+                .set("NEXT_WEEK",        nextWeek)
+                .set("DAY_HEADERS",      dayHeaders.toString())
+                .set("TIME_ROWS",        timeRows.toString())
                 .clearRemaining()
                 .render();
     }
@@ -154,24 +214,24 @@ public class MemberController {
         if (allowedArts != null && !allowedArts.isBlank()) {
             boolean match = false;
             for (String a : allowedArts.split(",")) {
-                if (a.trim().equalsIgnoreCase(session.getClassName())) { match = true; break; }
+                if (a.trim().equalsIgnoreCase(session.getClassType())) { match = true; break; }
             }
             if (!match) return false;
         }
         return true;
     }
 
-    public void registerForSession(int memberId, int sessionId) {
-        sessionRegistrationService.registerMemberForSession(sessionId, memberId);
+    public void registerForSession(int memberId, int sessionId, String weekStartDate) {
+        sessionRegistrationService.registerMemberForSession(sessionId, memberId, weekStartDate);
     }
 
-    public void unregisterFromSession(int memberId, int sessionId) {
-        sessionRegistrationService.unregisterMemberFromSession(sessionId, memberId);
+    public void unregisterFromSession(int memberId, int sessionId, String weekStartDate) {
+        sessionRegistrationService.unregisterMemberFromSession(sessionId, memberId, weekStartDate);
     }
 
-    // -----------------------------------------------------------------------
-    // EVENTS
-    // -----------------------------------------------------------------------
+    /*
+    EVENTS
+    */
 
     public String getEventsPage(int memberId) {
 

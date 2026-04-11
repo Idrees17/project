@@ -12,6 +12,7 @@ public class ClassSession {
     private String room;
     private boolean generated;
     private String skillLevel;
+    private String classType;
 
     public ClassSession() {
     }
@@ -106,5 +107,13 @@ public class ClassSession {
 
     public void setSkillLevel(String skillLevel) {
         this.skillLevel = skillLevel;
+    }
+
+    public String getClassType() {
+        return classType;
+    }
+
+    public void setClassType(String classType) {
+        this.classType = classType;
     }
 }

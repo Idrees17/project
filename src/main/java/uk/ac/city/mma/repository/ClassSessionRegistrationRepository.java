@@ -10,15 +10,16 @@ import java.util.List;
 
 public class ClassSessionRegistrationRepository {
 
-    public void registerMember(int sessionId, int memberId) {
+    public void registerMember(int sessionId, int memberId, String weekStartDate) {
 
-        String sql = "INSERT INTO class_registrations (session_id, member_id) VALUES (?, ?)";
+        String sql = "INSERT INTO class_registrations (session_id, member_id, week_start_date) VALUES (?, ?, ?)";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, sessionId);
             stmt.setInt(2, memberId);
+            stmt.setString(3, weekStartDate);
             stmt.executeUpdate();
 
         } catch (Exception e) {
@@ -26,20 +27,36 @@ public class ClassSessionRegistrationRepository {
         }
     }
 
-    public boolean isRegistered(int sessionId, int memberId) {
+    public void unregisterMember(int sessionId, int memberId, String weekStartDate) {
 
-        String sql = "SELECT COUNT(*) FROM class_registrations WHERE session_id = ? AND member_id = ?";
+        String sql = "DELETE FROM class_registrations WHERE session_id = ? AND member_id = ? AND week_start_date = ?";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, sessionId);
             stmt.setInt(2, memberId);
+            stmt.setString(3, weekStartDate);
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isRegistered(int sessionId, int memberId, String weekStartDate) {
+
+        String sql = "SELECT COUNT(*) FROM class_registrations WHERE session_id = ? AND member_id = ? AND week_start_date = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, sessionId);
+            stmt.setInt(2, memberId);
+            stmt.setString(3, weekStartDate);
             ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
+            if (rs.next()) return rs.getInt(1) > 0;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -48,21 +65,20 @@ public class ClassSessionRegistrationRepository {
         return false;
     }
 
-    public List<Integer> getRegisteredSessionIdsForMember(int memberId) {
+    public List<Integer> getRegisteredSessionIdsForMemberAndWeek(int memberId, String weekStartDate) {
 
         List<Integer> ids = new ArrayList<>();
 
-        String sql = "SELECT session_id FROM class_registrations WHERE member_id = ?";
+        String sql = "SELECT session_id FROM class_registrations WHERE member_id = ? AND week_start_date = ?";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, memberId);
+            stmt.setString(2, weekStartDate);
             ResultSet rs = stmt.executeQuery();
 
-            while (rs.next()) {
-                ids.add(rs.getInt("session_id"));
-            }
+            while (rs.next()) ids.add(rs.getInt("session_id"));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,35 +87,18 @@ public class ClassSessionRegistrationRepository {
         return ids;
     }
 
-    public void unregisterMember(int sessionId, int memberId) {
+    public int getRegistrationCountForWeek(int sessionId, String weekStartDate) {
 
-        String sql = "DELETE FROM class_registrations WHERE session_id = ? AND member_id = ?";
-
-        try (Connection conn = MySQLConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, sessionId);
-            stmt.setInt(2, memberId);
-            stmt.executeUpdate();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public int getRegistrationCount(int sessionId) {
-
-        String sql = "SELECT COUNT(*) FROM class_registrations WHERE session_id = ?";
+        String sql = "SELECT COUNT(*) FROM class_registrations WHERE session_id = ? AND week_start_date = ?";
 
         try (Connection conn = MySQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, sessionId);
+            stmt.setString(2, weekStartDate);
             ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
+            if (rs.next()) return rs.getInt(1);
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -8,25 +8,25 @@ public class ClassSessionRegistrationService {
 
     private ClassSessionRegistrationRepository repository = new ClassSessionRegistrationRepository();
 
-    public void registerMemberForSession(int sessionId, int memberId) {
-        if (!repository.isRegistered(sessionId, memberId)) {
-            repository.registerMember(sessionId, memberId);
+    public void registerMemberForSession(int sessionId, int memberId, String weekStartDate) {
+        if (!repository.isRegistered(sessionId, memberId, weekStartDate)) {
+            repository.registerMember(sessionId, memberId, weekStartDate);
         }
     }
 
-    public boolean isRegistered(int sessionId, int memberId) {
-        return repository.isRegistered(sessionId, memberId);
+    public void unregisterMemberFromSession(int sessionId, int memberId, String weekStartDate) {
+        repository.unregisterMember(sessionId, memberId, weekStartDate);
     }
 
-    public List<Integer> getRegisteredSessionIdsForMember(int memberId) {
-        return repository.getRegisteredSessionIdsForMember(memberId);
+    public boolean isRegistered(int sessionId, int memberId, String weekStartDate) {
+        return repository.isRegistered(sessionId, memberId, weekStartDate);
     }
 
-    public void unregisterMemberFromSession(int sessionId, int memberId) {
-        repository.unregisterMember(sessionId, memberId);
+    public List<Integer> getRegisteredSessionIdsForMemberAndWeek(int memberId, String weekStartDate) {
+        return repository.getRegisteredSessionIdsForMemberAndWeek(memberId, weekStartDate);
     }
 
-    public int getRegistrationCount(int sessionId) {
-        return repository.getRegistrationCount(sessionId);
+    public int getRegistrationCountForWeek(int sessionId, String weekStartDate) {
+        return repository.getRegistrationCountForWeek(sessionId, weekStartDate);
     }
 }

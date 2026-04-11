@@ -37,7 +37,7 @@ public class ClassSessionRepository {
 
         List<ClassSession> sessions = new ArrayList<>();
 
-        String sql = "SELECT cs.*, c.class_name, c.skill_level FROM class_sessions cs " +
+        String sql = "SELECT cs.*, c.class_name, c.skill_level, c.class_type FROM class_sessions cs " +
                 "JOIN classes c ON cs.class_id = c.class_id " +
                 "ORDER BY " +
                 "CASE cs.day_of_week " +
@@ -69,6 +69,7 @@ public class ClassSessionRepository {
 
                 session.setClassName(rs.getString("class_name"));
                 session.setSkillLevel(rs.getString("skill_level"));
+                session.setClassType(rs.getString("class_type"));
                 session.setGenerated(rs.getBoolean("is_generated"));
 
                 sessions.add(session);
@@ -85,7 +86,7 @@ public class ClassSessionRepository {
 
         List<ClassSession> sessions = new ArrayList<>();
 
-        String sql = "SELECT cs.*, c.class_name, c.skill_level FROM class_sessions cs " +
+        String sql = "SELECT cs.*, c.class_name, c.skill_level, c.class_type FROM class_sessions cs " +
                 "JOIN classes c ON cs.class_id = c.class_id " +
                 "WHERE cs.day_of_week = ?";
 
@@ -108,6 +109,7 @@ public class ClassSessionRepository {
 
                 session.setClassName(rs.getString("class_name"));
                 session.setSkillLevel(rs.getString("skill_level"));
+                session.setClassType(rs.getString("class_type"));
                 session.setGenerated(rs.getBoolean("is_generated"));
                 sessions.add(session);
             }
@@ -175,7 +177,7 @@ public class ClassSessionRepository {
 
     public ClassSession getSessionById(int sessionId) {
 
-        String sql = "SELECT cs.*, c.class_name, c.skill_level FROM class_sessions cs " +
+        String sql = "SELECT cs.*, c.class_name, c.skill_level, c.class_type FROM class_sessions cs " +
                 "JOIN classes c ON cs.class_id = c.class_id " +
                 "WHERE cs.session_id = ?";
 
@@ -198,6 +200,7 @@ public class ClassSessionRepository {
 
                 session.setClassName(rs.getString("class_name"));
                 session.setSkillLevel(rs.getString("skill_level"));
+                session.setClassType(rs.getString("class_type"));
                 session.setGenerated(rs.getBoolean("is_generated"));
 
                 return session;
