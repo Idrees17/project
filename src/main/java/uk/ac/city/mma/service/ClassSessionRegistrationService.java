@@ -1,5 +1,6 @@
 package uk.ac.city.mma.service;
 
+import uk.ac.city.mma.model.MemberProfile;
 import uk.ac.city.mma.repository.ClassSessionRegistrationRepository;
 
 import java.util.List;
@@ -28,5 +29,9 @@ public class ClassSessionRegistrationService {
 
     public int getRegistrationCountForWeek(int sessionId, String weekStartDate) {
         return repository.getRegistrationCountForWeek(sessionId, weekStartDate);
+    }
+
+    public List<MemberProfile> getRegistrantsForSessionAndWeek(int sessionId, String weekStartDate) {
+        return repository.getRegistrantsForSessionAndWeek(sessionId, weekStartDate);
     }
 }

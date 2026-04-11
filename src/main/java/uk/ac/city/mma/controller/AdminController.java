@@ -4,6 +4,10 @@ import uk.ac.city.mma.model.*;
 import uk.ac.city.mma.service.*;
 import uk.ac.city.mma.util.TemplateEngine;
 
+import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 public class AdminController {
@@ -18,6 +22,7 @@ public class AdminController {
     private MatchmakingService matchmakingService   = new MatchmakingService();
     private LiveEventService liveEventService       = new LiveEventService();
     private MembershipService membershipService     = new MembershipService();
+    private ClassSessionRegistrationService sessionRegistrationService = new ClassSessionRegistrationService();
 
     /*
     CLASSES
@@ -107,7 +112,7 @@ public class AdminController {
     TIMETABLE
     */
 
-    public String getTimetablePage() {
+    public String getTimetablePage(String weekParam) {
 
         List<ClassSession> sessions = classSessionService.getAllSessions();
         List<String> genMessages    = timetableService.getLastGenerationMessages();
@@ -121,7 +126,45 @@ public class AdminController {
             generationLog = log.toString();
         }
 
+        /*
+        WEEK CALCULATION
+        */
+        LocalDate today  = LocalDate.now();
+        LocalDate monday;
+
+        if (weekParam != null && !weekParam.isBlank()) {
+            try {
+                monday = LocalDate.parse(weekParam);
+            } catch (Exception e) {
+                monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            }
+        } else {
+            monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        }
+
+        LocalDate sunday      = monday.plusDays(6);
+        String weekStartDate  = monday.toString();
+        String prevWeek       = monday.minusWeeks(1).toString();
+        String nextWeek       = monday.plusWeeks(1).toString();
+
+        DateTimeFormatter display = DateTimeFormatter.ofPattern("d MMM yyyy");
+        String weekLabel = monday.format(display) + " \u2014 " + sunday.format(display);
+
         String[] dayNames = {"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"};
+
+        /*
+        DAY HEADER ROW — shows actual dates for the week
+        */
+        DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("EEE d MMM");
+        StringBuilder dayHeaders = new StringBuilder();
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = monday.plusDays(i);
+            boolean isToday = date.equals(today);
+            String bg = isToday ? "style='background:#0d6efd;color:#fff'" : "";
+            dayHeaders.append("<th class='text-center py-3' ").append(bg).append(">")
+                    .append(date.format(dayFmt))
+                    .append("</th>");
+        }
 
         /*
         TIME SLOT ROWS
@@ -131,11 +174,6 @@ public class AdminController {
         for (int hour = 6; hour < 22; hour++) {
             for (int min = 0; min < 60; min += 30) {
                 String slotTime = String.format("%02d:%02d", hour, min);
-
-                boolean hasAny = false;
-                for (ClassSession s : sessions) {
-                    if (s.getStartTime().equals(slotTime)) { hasAny = true; break; }
-                }
 
                 timeRows.append("<tr>");
                 timeRows.append("<td class='time-cell'>").append(slotTime).append("</td>");
@@ -148,6 +186,8 @@ public class AdminController {
                         if (!s.getStartTime().equals(slotTime)) continue;
 
                         String bgColor = s.isGenerated() ? "#6f42c1" : "#0d6efd";
+                        int count = sessionRegistrationService
+                                .getRegistrationCountForWeek(s.getSessionId(), weekStartDate);
 
                         timeRows.append("<div class='session-block' style='background:").append(bgColor).append("'>")
                                 .append("<span class='session-name'>").append(s.getClassName()).append("</span>")
@@ -156,14 +196,20 @@ public class AdminController {
                                 .append(" \u00b7 ").append(s.getCoachName())
                                 .append("</span>")
                                 .append("<span class='session-meta'>").append(s.getRoom()).append("</span>")
+                                .append("<span class='session-registrants'><i class='bi bi-people me-1'></i>")
+                                .append(count).append(" registered</span>")
                                 .append("<div class='session-actions'>")
                                 .append("<a href='/admin/edit-session?sessionId=").append(s.getSessionId())
-                                .append("' class='btn btn-sm btn-light' style='font-size:0.7rem;padding:2px 6px'>")
+                                .append("' class='btn btn-sm btn-light' style='font-size:0.7rem;padding:2px 6px' title='Edit'>")
                                 .append("<i class='bi bi-pencil'></i></a>")
+                                .append("<a href='/admin/session-registrants?sessionId=").append(s.getSessionId())
+                                .append("&week=").append(weekStartDate)
+                                .append("' class='btn btn-sm btn-light' style='font-size:0.7rem;padding:2px 6px' title='View Registrants'>")
+                                .append("<i class='bi bi-people'></i></a>")
                                 .append("<form method='POST' action='/admin/delete-session' style='display:inline;'>")
                                 .append("<input type='hidden' name='sessionId' value='").append(s.getSessionId()).append("'>")
                                 .append("<button class='btn btn-sm btn-light' style='font-size:0.7rem;padding:2px 6px' ")
-                                .append("type='submit' onclick='return confirm(\"Delete session?\")'>")
+                                .append("type='submit' onclick='return confirm(\"Delete session?\")' title='Delete'>")
                                 .append("<i class='bi bi-trash'></i></button></form>")
                                 .append("</div>")
                                 .append("</div>");
@@ -180,6 +226,10 @@ public class AdminController {
                 .set("PAGE_TITLE",     "Timetable")
                 .set("NAV_TIMETABLE",  "active")
                 .set("GENERATION_LOG", generationLog)
+                .set("WEEK_LABEL",     weekLabel)
+                .set("PREV_WEEK",      prevWeek)
+                .set("NEXT_WEEK",      nextWeek)
+                .set("DAY_HEADERS",    dayHeaders.toString())
                 .set("TIME_ROWS",      timeRows.toString())
                 .clearRemaining()
                 .render();
@@ -187,6 +237,49 @@ public class AdminController {
 
     public void deleteSession(int sessionId) {
         classSessionService.deleteSession(sessionId);
+    }
+
+    public String getSessionRegistrantsPage(int sessionId, String weekStartDate) {
+
+        ClassSession session = classSessionService.getSessionById(sessionId);
+        List<MemberProfile> registrants = sessionRegistrationService
+                .getRegistrantsForSessionAndWeek(sessionId, weekStartDate);
+
+        LocalDate monday = LocalDate.parse(weekStartDate);
+        LocalDate sunday = monday.plusDays(6);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d MMM yyyy");
+        String weekLabel = monday.format(fmt) + " \u2014 " + sunday.format(fmt);
+
+        StringBuilder rows = new StringBuilder();
+        if (registrants.isEmpty()) {
+            rows.append("<tr><td colspan='4' class='text-center text-muted py-4'>")
+                    .append("No members registered for this session this week.</td></tr>");
+        } else {
+            for (MemberProfile m : registrants) {
+                rows.append("<tr>")
+                        .append("<td>").append(m.getFirstName()).append(" ").append(m.getLastName()).append("</td>")
+                        .append("<td>").append(m.getAge()).append("</td>")
+                        .append("<td>").append(m.getHeightCm()).append(" cm</td>")
+                        .append("<td>").append(m.getWeightKg()).append(" kg</td>")
+                        .append("</tr>");
+            }
+        }
+
+        return TemplateEngine.load("admin-layout.html", "content/admin-session-registrants.html")
+                .set("PAGE_TITLE",        "Session Registrants")
+                .set("NAV_TIMETABLE",     "active")
+                .set("SESSION_NAME",      session.getClassName())
+                .set("WEEK_LABEL",        weekLabel)
+                .set("WEEK_START",        weekStartDate)
+                .set("REGISTRANT_COUNT",  String.valueOf(registrants.size()))
+                .set("SESSION_TIME",      session.getStartTime())
+                .set("SESSION_DAY",       session.getDayOfWeek())
+                .set("SESSION_DURATION",  String.valueOf(session.getDurationMinutes()))
+                .set("SESSION_COACH",     session.getCoachName())
+                .set("SESSION_ROOM",      session.getRoom())
+                .set("ROWS_REGISTRANTS",  rows.toString())
+                .clearRemaining()
+                .render();
     }
 
     public void updateSession(int id, String day, String time, int dur, String coach, String room) {

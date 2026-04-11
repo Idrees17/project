@@ -182,7 +182,18 @@ public class Main {
 
         server.createContext("/admin/timetable", exchange -> {
 
-            String html = adminController.getTimetablePage();
+            String query = exchange.getRequestURI().getQuery();
+            String weekParam = null;
+            if (query != null) {
+                for (String part : query.split("&")) {
+                    if (part.startsWith("week=")) {
+                        weekParam = part.substring(5);
+                        break;
+                    }
+                }
+            }
+
+            String html = adminController.getTimetablePage(weekParam);
 
             byte[] response = html.getBytes();
             exchange.sendResponseHeaders(200, response.length);
@@ -271,6 +282,25 @@ public class Main {
             }
 
             exchange.close();
+        });
+
+        server.createContext("/admin/session-registrants", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String query = exchange.getRequestURI().getQuery();
+                Map<String, String> params = parseFormData(query);
+
+                int sessionId = Integer.parseInt(params.get("sessionId"));
+                String week   = params.get("week");
+
+                String html = adminController.getSessionRegistrantsPage(sessionId, week);
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            }
         });
 
 

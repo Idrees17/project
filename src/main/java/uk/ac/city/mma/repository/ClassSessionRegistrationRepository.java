@@ -1,6 +1,7 @@
 package uk.ac.city.mma.repository;
 
 import uk.ac.city.mma.config.MySQLConnection;
+import uk.ac.city.mma.model.MemberProfile;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -105,5 +106,40 @@ public class ClassSessionRegistrationRepository {
         }
 
         return 0;
+    }
+
+    public List<MemberProfile> getRegistrantsForSessionAndWeek(int sessionId, String weekStartDate) {
+
+        List<MemberProfile> members = new ArrayList<>();
+
+        String sql = "SELECT mp.* FROM class_registrations cr " +
+                "JOIN member_profiles mp ON cr.member_id = mp.member_id " +
+                "WHERE cr.session_id = ? AND cr.week_start_date = ? " +
+                "ORDER BY mp.last_name, mp.first_name";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, sessionId);
+            stmt.setString(2, weekStartDate);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                members.add(new MemberProfile(
+                        rs.getInt("member_id"),
+                        rs.getInt("user_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getInt("age"),
+                        rs.getInt("height_cm"),
+                        rs.getDouble("weight_kg")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return members;
     }
 }

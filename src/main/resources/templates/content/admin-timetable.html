@@ -8,6 +8,18 @@
 
 {{GENERATION_LOG}}
 
+<!-- Week navigation -->
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/admin/timetable?week={{PREV_WEEK}}" class="btn btn-outline-secondary">
+        <i class="bi bi-chevron-left me-1"></i>Previous Week
+    </a>
+    <h5 class="mb-0 fw-semibold">{{WEEK_LABEL}}</h5>
+    <a href="/admin/timetable?week={{NEXT_WEEK}}" class="btn btn-outline-secondary">
+        Next Week<i class="bi bi-chevron-right ms-1"></i>
+    </a>
+    <a href="/admin/timetable" class="btn btn-outline-primary ms-2">Today</a>
+</div>
+
 <!-- Timetable grid -->
 <div class="card">
     <div class="card-body p-0">
@@ -16,13 +28,7 @@
                 <thead>
                 <tr style="background:#212529; color:#fff">
                     <th style="width:80px" class="text-center py-3">Time</th>
-                    <th class="text-center py-3">Monday</th>
-                    <th class="text-center py-3">Tuesday</th>
-                    <th class="text-center py-3">Wednesday</th>
-                    <th class="text-center py-3">Thursday</th>
-                    <th class="text-center py-3">Friday</th>
-                    <th class="text-center py-3">Saturday</th>
-                    <th class="text-center py-3">Sunday</th>
+                    {{DAY_HEADERS}}
                 </tr>
                 </thead>
                 <tbody>
@@ -45,11 +51,13 @@
         padding: 6px 8px;
         font-size: 0.8rem;
         color: #fff;
+        margin-bottom: 2px;
     }
     .session-block .session-name { font-weight: 600; display: block; }
-    .session-block .session-meta { opacity: 0.85; display: block; font-size: 0.75rem; }
-    .session-block .session-actions { margin-top: 4px; display: flex; gap: 4px; }
-    .timetable-cell { vertical-align: top; padding: 4px !important; height: 60px; }
+    .session-block .session-meta { opacity: 0.85; display: block; font-size: 0.72rem; }
+    .session-block .session-registrants { opacity: 0.9; display: block; font-size: 0.72rem; }
+    .session-block .session-actions { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+    .timetable-cell { vertical-align: top; padding: 4px !important; min-height: 60px; }
     .time-cell { vertical-align: middle; text-align: center; font-size: 0.8rem;
         color: #6c757d; font-weight: 600; padding: 4px !important; }
 </style>
