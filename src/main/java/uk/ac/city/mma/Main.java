@@ -106,9 +106,6 @@ public class Main {
                 String html = new String(Files.readAllBytes(
                         Paths.get("src/main/resources/templates/register.html")));
 
-                /*
-                Clear any leftover placeholders on a plain GET request
-                */
                 html = html.replace("{{ERROR_ALERT}}", "").replace("{{PREFILL_USERNAME}}", "");
 
                 byte[] response = html.getBytes();
@@ -962,7 +959,6 @@ public class Main {
          ADMIN MEMBERSHIP CONTROLS
         */
 
-
         server.createContext("/admin/memberships", exchange -> {
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
@@ -1043,6 +1039,9 @@ public class Main {
             exchange.close();
         });
 
+        /*
+         MEMBER TIMETABLE CONTROLS
+        */
 
         server.createContext("/member/timetable", exchange -> {
 
@@ -1148,6 +1147,10 @@ public class Main {
 
             exchange.close();
         });
+
+        /*
+         MEMBER EVENT CONTROLS
+        */
 
         server.createContext("/member/events", exchange -> {
 
