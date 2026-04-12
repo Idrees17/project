@@ -155,10 +155,9 @@ public class Main {
 
             exchange.close();
         });
-
         /*
         ADMIN CLASS CONTROLS
-         */
+        */
 
         server.createContext("/admin/classes", exchange -> {
 
@@ -1058,10 +1057,11 @@ public class Main {
             MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
 
             if (profile == null) {
-                String html = "<html><body>" +
-                        "<h1>Please complete your profile first.</h1>" +
-                        "<button onclick=\"location.href='/member/profile'\">Go to My Profile</button>" +
-                        "</body></html>";
+                String html = uk.ac.city.mma.util.TemplateEngine
+                        .load("member-layout.html", "content/member-complete-profile.html")
+                        .set("PAGE_TITLE", "Complete Your Profile")
+                        .clearRemaining()
+                        .render();
 
                 byte[] response = html.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
@@ -1162,10 +1162,11 @@ public class Main {
             MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
 
             if (profile == null) {
-                String html = "<html><body>" +
-                        "<h1>Please complete your profile first.</h1>" +
-                        "<button onclick=\"location.href='/member/profile'\">Go to My Profile</button>" +
-                        "</body></html>";
+                String html = uk.ac.city.mma.util.TemplateEngine
+                        .load("member-layout.html", "content/member-complete-profile.html")
+                        .set("PAGE_TITLE", "Complete Your Profile")
+                        .clearRemaining()
+                        .render();
 
                 byte[] response = html.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
@@ -1284,10 +1285,11 @@ public class Main {
             MemberProfile profile = new MemberService().getProfileByUserId(currentUser.getId());
 
             if (profile == null) {
-                String html = "<html><body>" +
-                        "<h1>Please complete your profile first.</h1>" +
-                        "<button onclick=\"location.href='/member/profile'\">Go to My Profile</button>" +
-                        "</body></html>";
+                String html = uk.ac.city.mma.util.TemplateEngine
+                        .load("member-layout.html", "content/member-complete-profile.html")
+                        .set("PAGE_TITLE", "Complete Your Profile")
+                        .clearRemaining()
+                        .render();
 
                 byte[] response = html.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
