@@ -36,10 +36,22 @@ public class Main {
 
             if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
 
-                byte[] response = Files.readAllBytes(
-                        Paths.get("src/main/resources/templates/login.html")
-                );
+                String query = exchange.getRequestURI().getQuery();
+                boolean justRegistered = query != null && query.contains("registered=true");
 
+                String html = new String(Files.readAllBytes(
+                        Paths.get("src/main/resources/templates/login.html")));
+
+                if (justRegistered) {
+                    html = html.replace("{{SUCCESS_ALERT}}",
+                            "<div class='alert alert-success'>"
+                                    + "<i class='bi bi-check-circle me-2'></i>"
+                                    + "Account created successfully. Please sign in.</div>");
+                } else {
+                    html = html.replace("{{SUCCESS_ALERT}}", "");
+                }
+
+                byte[] response = html.getBytes();
                 exchange.sendResponseHeaders(200, response.length);
                 exchange.getResponseBody().write(response);
             }
@@ -87,10 +99,66 @@ public class Main {
         server.createContext("/login-failed", e ->
                 serveHtml(e,"login-failed.html"));
 
+        server.createContext("/register", exchange -> {
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
+
+                String html = new String(Files.readAllBytes(
+                        Paths.get("src/main/resources/templates/register.html")));
+
+                /*
+                Clear any leftover placeholders on a plain GET request
+                */
+                html = html.replace("{{ERROR_ALERT}}", "").replace("{{PREFILL_USERNAME}}", "");
+
+                byte[] response = html.getBytes();
+                exchange.sendResponseHeaders(200, response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            }
+
+            if (exchange.getRequestMethod().equalsIgnoreCase("POST")) {
+
+                String body = new String(exchange.getRequestBody().readAllBytes());
+                Map<String, String> params = parseFormData(body);
+
+                String username        = params.get("username");
+                String password        = params.get("password");
+                String confirmPassword = params.get("confirmPassword");
+
+                String error = authController.register(username, password, confirmPassword);
+
+                if (error == null) {
+                    /*
+                    Registration successful — redirect to login with success message
+                    */
+                    redirect(exchange, "/login?registered=true");
+                } else {
+                    /*
+                    Registration failed — re-render the register page with error message
+                    */
+                    String errorAlert = "<div class='alert alert-danger'>"
+                            + "<i class='bi bi-exclamation-circle me-2'></i>" + error + "</div>";
+
+                    String html = new String(Files.readAllBytes(
+                            Paths.get("src/main/resources/templates/register.html")));
+
+                    html = html.replace("{{ERROR_ALERT}}", errorAlert)
+                            .replace("{{PREFILL_USERNAME}}", username == null ? "" : username);
+
+                    byte[] response = html.getBytes();
+                    exchange.sendResponseHeaders(200, response.length);
+                    exchange.getResponseBody().write(response);
+                    exchange.close();
+                }
+            }
+
+            exchange.close();
+        });
 
         /*
-         ADMIN CLASSES PAGE
-        */
+        ADMIN CLASS CONTROLS
+         */
 
         server.createContext("/admin/classes", exchange -> {
 

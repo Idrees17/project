@@ -25,4 +25,11 @@ public class UserController {
     public User authenticateUser(String username, String password) {
         return authService.authenticate(username, password);
     }
+
+    /*
+    Returns null on success, or an error message if registration fails.
+    */
+    public String register(String username, String password, String confirmPassword) {
+        return authService.register(username, password, confirmPassword);
+    }
 }

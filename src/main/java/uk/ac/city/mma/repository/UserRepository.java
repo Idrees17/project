@@ -37,4 +37,39 @@ public class UserRepository {
 
         return null;
     }
+
+    public boolean usernameExists(String username) {
+
+        String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) return rs.getInt(1) > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public void createUser(String username, String password) {
+
+        String sql = "INSERT INTO users (username, password, role) VALUES (?, ?, 'MEMBER')";
+
+        try (Connection conn = MySQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
